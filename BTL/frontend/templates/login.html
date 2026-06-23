@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCS Smart Parking — Đăng nhập</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0F1117;font-family:'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{background:#1A1D2E;border:1px solid #2A2D4A;border-radius:16px;padding:40px 36px;width:380px;text-align:center}
+.logo{font-size:52px;margin-bottom:8px}
+h1{color:#EAEAEA;font-size:20px;font-weight:600;margin-bottom:4px}
+.sub{color:#8B8FA8;font-size:13px;margin-bottom:28px}
+label{display:block;text-align:left;color:#8B8FA8;font-size:12px;margin-bottom:5px;margin-top:14px}
+input{width:100%;background:#252840;border:1px solid #3A3D5C;border-radius:8px;padding:11px 14px;color:#EAEAEA;font-size:14px;outline:none;transition:border .2s}
+input:focus{border-color:#4F8EF7}
+.btn{width:100%;margin-top:22px;padding:12px;background:#4F8EF7;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.88}
+.error{color:#E74C3C;font-size:13px;margin-top:10px;background:#2D1A1A;padding:8px 12px;border-radius:6px}
+.hints{margin-top:22px;text-align:left;background:#252840;border-radius:8px;padding:12px 14px}
+.hints p{color:#8B8FA8;font-size:11px;line-height:1.9}
+.hints span{color:#4F8EF7;font-family:monospace}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🅿</div>
+  <h1>PCS Smart Parking</h1>
+  <p class="sub">Hệ thống quản lý bãi đỗ xe thông minh</p>
+  <form method="POST">
+    <label>Tên đăng nhập</label>
+    <input name="username" value="admin" autofocus>
+    <label>Mật khẩu</label>
+    <input name="password" type="password" value="admin123">
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <button class="btn" type="submit">ĐĂNG NHẬP</button>
+  </form>
+  <div class="hints">
+    <p>Admin: <span>admin / admin123</span></p>
+    <p>Nhân viên: <span>staff1 / staff123</span></p>
+  </div>
+</div>
+</body>
+</html>

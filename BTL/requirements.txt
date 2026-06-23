@@ -1,0 +1,9 @@
+# PCS Smart Parking — Web version
+# Cài đặt: pip install -r requirements.txt
+
+flask>=3.0.0
+
+# AI / Camera (tùy chọn)
+# ultralytics>=8.0.0
+# easyocr>=1.7.0
+# opencv-python>=4.8.0

@@ -1,0 +1,285 @@
+{
+  "name": "PCS Parking",
+  "slots": [
+    {
+      "slot_id": "A01",
+      "zone": "A",
+      "state": "occupied",
+      "current_plate": "20P-00001",
+      "notes": ""
+    },
+    {
+      "slot_id": "A02",
+      "zone": "A",
+      "state": "occupied",
+      "current_plate": "51A-12345",
+      "notes": ""
+    },
+    {
+      "slot_id": "A03",
+      "zone": "A",
+      "state": "occupied",
+      "current_plate": "51L-77777",
+      "notes": ""
+    },
+    {
+      "slot_id": "A04",
+      "zone": "A",
+      "state": "occupied",
+      "current_plate": "74K-66666",
+      "notes": ""
+    },
+    {
+      "slot_id": "A05",
+      "zone": "A",
+      "state": "occupied",
+      "current_plate": "51F-33333",
+      "notes": ""
+    },
+    {
+      "slot_id": "A06",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A07",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A08",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A09",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A10",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A11",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A12",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A13",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A14",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A15",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A16",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A17",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A18",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A19",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "A20",
+      "zone": "A",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B01",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B02",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B03",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B04",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B05",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B06",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B07",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B08",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B09",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B10",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B11",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "B12",
+      "zone": "B",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "C01",
+      "zone": "C",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "C02",
+      "zone": "C",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "C03",
+      "zone": "C",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "C04",
+      "zone": "C",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "C05",
+      "zone": "C",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "C06",
+      "zone": "C",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "C07",
+      "zone": "C",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    },
+    {
+      "slot_id": "C08",
+      "zone": "C",
+      "state": "empty",
+      "current_plate": null,
+      "notes": ""
+    }
+  ]
+}
