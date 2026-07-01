@@ -17,9 +17,20 @@ from typing import Optional
 
 
 class VehicleType(Enum):
-    CAR = "car"
     MOTORBIKE = "motorbike"
-    TRUCK = "truck"
+    LARGE_MOTORBIKE = "large_motorbike"
+    ELECTRIC = "electric"
+    CAR_UNDER_7 = "car_under_7"
+    CAR_7_TO_16 = "car_7_to_16"
+
+    def detectVehicle(self) -> str:
+        return self.value
+
+    def recognizeVehicle(self) -> str:
+        return self.value
+
+    def validateVehicle(self) -> bool:
+        return self in {VehicleType.MOTORBIKE, VehicleType.LARGE_MOTORBIKE, VehicleType.ELECTRIC, VehicleType.CAR_UNDER_7, VehicleType.CAR_7_TO_16} and self != VehicleType.MOTORBIKE
 
 
 @dataclass
@@ -50,6 +61,13 @@ class Vehicle:
         """Làm tròn lên theo giờ (logic tính phí)"""
         import math
         return math.ceil(self.duration_minutes / 60)
+
+    def registerVehicle(self, owner_name: str = "", owner_phone: str = "") -> None:
+        self.owner_name = owner_name
+        self.owner_phone = owner_phone
+
+    def getVehicleInfo(self) -> dict:
+        return self.to_dict()
 
     def to_dict(self) -> dict:
         return {

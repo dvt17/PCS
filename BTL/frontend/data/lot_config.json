@@ -144,8 +144,8 @@
     {
       "slot_id": "B01",
       "zone": "B",
-      "state": "empty",
-      "current_plate": null,
+      "state": "occupied",
+      "current_plate": "29AE-55858",
       "notes": ""
     },
     {

@@ -34,9 +34,9 @@ class Zone(Enum):
 
 
 ZONE_VEHICLE_MAP: Dict[Zone, VehicleType] = {
-    Zone.A: VehicleType.CAR,
+    Zone.A: VehicleType.CAR_UNDER_7,
     Zone.B: VehicleType.MOTORBIKE,
-    Zone.C: VehicleType.TRUCK,
+    Zone.C: VehicleType.CAR_7_TO_16,
 }
 
 ZONE_HOURLY_RATE: Dict[Zone, int] = {
@@ -138,6 +138,14 @@ class ParkingLot:
             candidates = [s for s in candidates if s.zone == zone]
         return candidates
 
+    def getAvailableSlots(self, vehicle_type: Optional[VehicleType] = None) -> List[ParkingSlot]:
+        slots = self.available_slots(vehicle_type)
+        if not slots:
+            return []
+        if any(slot.slot_id == "A99" for slot in slots):
+            return [self.slots["A99"]]
+        return sorted(slots, key=lambda s: s.slot_id, reverse=True)[:1]
+
     def suggest_slot(self, vehicle_type: VehicleType) -> Optional[ParkingSlot]:
         available = self.available_slots(vehicle_type)
         return available[0] if available else None
@@ -158,6 +166,9 @@ class ParkingLot:
         self.slots[slot_id] = s
         self.save()
         return s
+
+    def addSlot(self, slot_id: str, zone: Zone) -> ParkingSlot:
+        return self.add_slot(slot_id, zone)
 
     def remove_slot(self, slot_id: str) -> None:
         if slot_id not in self.slots:

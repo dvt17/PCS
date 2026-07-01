@@ -12,6 +12,11 @@
   --accent:#4F8EF7;--success:#2ECC71;--warn:#F39C12;--danger:#E74C3C;
   --text:#EAEAEA;--muted:#8B8FA8;--purple:#9B59B6;
   --empty:#27AE60;--occupied:#C0392B;--reserved:#D68910;--disabled:#4A4D6A;
+
+  /* Zone theme colours */
+  --zone-a-bg:#1A2E1A;--zone-a-border:#2ECC7166;--zone-a-head:#27AE60;
+  --zone-b-bg:#1A1A2E;--zone-b-border:#4F8EF766;--zone-b-head:#4F8EF7;
+  --zone-c-bg:#2E1A1A;--zone-c-border:#E74C3C66;--zone-c-head:#E74C3C;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
@@ -55,9 +60,83 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .panel{display:none}
 .panel.active{display:contents}
 
-/* ── Lot grid ── */
-.lot-wrap{overflow-x:auto}
-.lot-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;min-width:560px}
+/* ════════════════════════════════════════════════
+   ZONE LAYOUT — Khu vực riêng cho từng loại xe
+   ════════════════════════════════════════════════ */
+.zone-group{
+  border-radius:10px;
+  padding:12px 14px 14px;
+  margin-bottom:10px;
+  border:1px solid;
+  position:relative;
+  overflow:hidden;
+}
+.zone-group::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:3px;
+}
+.zone-group-a{
+  background:var(--zone-a-bg);
+  border-color:var(--zone-a-border);
+}
+.zone-group-a::before{background:var(--zone-a-head)}
+.zone-group-b{
+  background:var(--zone-b-bg);
+  border-color:var(--zone-b-border);
+}
+.zone-group-b::before{background:var(--zone-b-head)}
+.zone-group-c{
+  background:var(--zone-c-bg);
+  border-color:var(--zone-c-border);
+}
+.zone-group-c::before{background:var(--zone-c-head)}
+
+.zone-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:8px;
+  padding-bottom:6px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.zone-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.zone-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:28px;height:28px;
+  border-radius:6px;
+  font-weight:800;
+  font-size:13px;
+  color:#fff;
+}
+.zone-badge-a{background:var(--zone-a-head)}
+.zone-badge-b{background:var(--zone-b-head)}
+.zone-badge-c{background:var(--zone-c-head)}
+
+.zone-name{font-size:14px;font-weight:700;color:var(--text)}
+.zone-desc{font-size:11px;color:var(--muted)}
+.zone-stats{font-size:11px;color:var(--muted);text-align:right}
+.zone-stats strong{color:var(--text)}
+
+.zone-grid{
+  display:grid;
+  gap:4px;
+}
+.zone-grid-a .slot.empty{background:#1A3A1A;border-color:#2ECC7166;color:#2ECC71}
+.zone-grid-a .slot.occupied{background:#3D1A1A;border-color:#E74C3C66;color:#E74C3C}
+.zone-grid-b .slot.empty{background:#1A1A3A;border-color:#4F8EF766;color:#4F8EF7}
+.zone-grid-b .slot.occupied{background:#2A1A3A;border-color:#9B59B666;color:#9B59B6}
+.zone-grid-c .slot.empty{background:#2A1A1A;border-color:#E74C3C44;color:#E74C3C}
+.zone-grid-c .slot.occupied{background:#2A1A2A;border-color:#D6891066;color:#D68910}
+
+/* ── Slot ── */
 .slot{border-radius:6px;padding:5px 3px 4px;text-align:center;cursor:pointer;transition:transform .15s,opacity .15s;border:1px solid transparent;position:relative}
 .slot:hover{transform:scale(1.06);z-index:2}
 .slot.empty{background:#163D22;border-color:#27AE60;color:#2ECC71}
@@ -69,9 +148,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 @keyframes pulse{from{opacity:1}to{opacity:.4}}
 .slot-id{font-size:10px;font-weight:700}
 .slot-plate{font-size:8px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+
+/* ── Legend (updated for zones) ── */
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
 .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
-.leg-dot{width:10px;height:10px;border-radius:3px}
+.leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 
 /* ── Camera box ── */
 .cam-box{background:var(--surface);border-radius:8px;padding:12px;border:1px solid var(--border)}
@@ -80,10 +161,31 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .cam-key{font-size:11px;color:var(--muted)}
 .cam-val{font-size:13px;font-weight:600;color:var(--text);font-family:monospace}
 .cam-plate{font-size:20px;font-weight:700;letter-spacing:.12em}
+.cam-stage{position:relative;margin-top:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#000;min-height:220px}
+.cam-stage video,.cam-stage canvas{width:100%;height:220px;object-fit:cover;display:block}
+.cam-stage canvas{position:absolute;inset:0;pointer-events:none}
+.history-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.history-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 10px}
+.history-title{font-size:12px;font-weight:600;color:var(--text)}
+.history-meta{font-size:10px;color:var(--muted);margin-top:4px}
+.badge{display:inline-block;padding:2px 6px;border-radius:999px;font-size:10px;font-weight:600;text-transform:uppercase;margin-left:4px}
+.badge.valid{background:rgba(46,204,113,.15);color:var(--success)}
+.badge.warn{background:rgba(243,156,18,.15);color:var(--warn)}
 
 /* ── Buttons ── */
 .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .btn{padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
+
+/* ── Recognition history table ── */
+.history-table-wrap{margin-top:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
+.history-table{width:100%;border-collapse:collapse;font-size:12px}
+.history-table th,.history-table td{padding:10px 10px;border-bottom:1px solid var(--border);text-align:left}
+.history-table th{background:rgba(79,142,247,.12);color:var(--accent);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.history-table tr:last-child td{border-bottom:none}
+.history-table .col-time{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.history-table .col-plate{font-weight:700;color:var(--text)}
+.history-table .col-type{color:var(--muted)}
+.history-table .col-score{color:var(--warn);font-weight:600}
 .btn:hover{opacity:.85;transform:translateY(-1px)}
 .btn:active{transform:scale(.97)}
 .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -209,14 +311,13 @@ input[type=range]{flex:1;accent-color:var(--accent)}
 
     <!-- ─── DASHBOARD TAB ─── -->
     <div id="tab-dashboard" class="panel active" style="display:flex;flex-direction:column;gap:12px">
-      <!-- Lot mini map -->
+      <!-- Lot mini map — ZONE SEPARATED -->
       <div class="card">
-        <div class="card-title"><i class="fa fa-map-pin"></i> Sơ đồ bãi đỗ (mini)</div>
-        <div class="lot-wrap"><div class="lot-grid" id="lot-mini"></div></div>
+        <div class="card-title"><i class="fa fa-map-pin"></i> Sơ đồ bãi đỗ — các khu riêng biệt</div>
+        <div id="lot-mini-zones"></div>
         <div class="legend">
           <div class="leg"><div class="leg-dot" style="background:#27AE60"></div>Trống</div>
           <div class="leg"><div class="leg-dot" style="background:#C0392B"></div>Đỗ xe</div>
-          <div class="leg"><div class="leg-dot" style="background:#D68910"></div>Đặt trước</div>
           <div class="leg"><div class="leg-dot" style="background:#4F8EF7"></div>Đang vào</div>
           <div class="leg"><div class="leg-dot" style="background:#9B59B6"></div>Đang ra</div>
           <div class="leg"><div class="leg-dot" style="background:#2A2D4A"></div>Hỏng</div>
@@ -231,12 +332,47 @@ input[type=range]{flex:1;accent-color:var(--accent)}
             <div class="cam-row"><span class="cam-key">Model</span><span class="cam-val" style="font-size:11px;color:var(--success)">YOLOv8 + EasyOCR ✓</span></div>
             <div class="cam-row"><span class="cam-key">Biển số phát hiện</span><span class="cam-val cam-plate" id="cam-plate">—</span></div>
             <div class="cam-row"><span class="cam-key">Độ tin cậy</span><span class="cam-val" id="cam-conf">—</span></div>
+            <div class="cam-row"><span class="cam-key">Loại xe</span><span class="cam-val" id="cam-type">—</span></div>
             <div class="cam-row"><span class="cam-key">Trạng thái</span><span class="cam-val" id="cam-status">—</span></div>
+          </div>
+          <div class="cam-stage">
+            <video id="video-feed" autoplay playsinline muted></video>
+            <canvas id="overlay-canvas"></canvas>
           </div>
           <div class="btn-row">
             <button class="btn btn-primary btn-sm" onclick="triggerOCR()"><i class="fa fa-camera"></i> Chụp & nhận diện</button>
+            <button class="btn btn-sm" onclick="toggleCamera()"><i class="fa fa-video"></i> Camera</button>
             <button class="btn btn-warn btn-sm" onclick="openEntryModal()"><i class="fa fa-right-to-bracket"></i> Xe vào</button>
             <button class="btn btn-danger btn-sm" onclick="openExitModal()"><i class="fa fa-right-from-bracket"></i> Xe ra</button>
+          </div>
+          <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+            <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:6px">Tải ảnh lên để đọc biển số</label>
+            <input id="image-file" type="file" accept="image/*" style="width:100%;margin-bottom:8px;color:var(--text)">
+            <div class="btn-row">
+              <button class="btn btn-sm" onclick="uploadAndReadImage()"><i class="fa fa-image"></i> Đọc ảnh</button>
+            </div>
+            <div id="image-preview" style="margin-top:10px;display:none;position:relative">
+              <img id="preview-img" style="width:100%;border-radius:8px;border:1px solid var(--border);display:block" alt="preview">
+              <canvas id="upload-overlay-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;border-radius:8px;pointer-events:none"></canvas>
+            </div>
+            <div id="upload-result" style="margin-top:8px;font-size:12px;color:var(--muted)"></div>
+            <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+              <div class="card-title" style="margin-bottom:8px"><i class="fa fa-history"></i> Lịch sử nhận diện</div>
+              <div class="history-table-wrap">
+                <table class="history-table">
+                  <thead>
+                    <tr>
+                      <th>Thời gian</th>
+                      <th>Biển số</th>
+                      <th>Loại xe</th>
+                      <th>Độ tin cậy</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody id="history-panel"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -256,29 +392,11 @@ input[type=range]{flex:1;accent-color:var(--accent)}
     <!-- ─── LOT TAB ─── -->
     <div id="tab-lot" class="panel" style="display:none;flex-direction:column;gap:12px">
       <div class="card">
-        <div class="card-title"><i class="fa fa-map"></i> Sơ đồ chi tiết — 40 ô đỗ</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
-          <div class="metric" style="padding:10px 14px">
-            <div class="metric-label">Zone A · Ô tô</div>
-            <div class="metric-val" style="font-size:18px" id="za-avail">—</div>
-            <div class="metric-sub">ô còn trống</div>
-          </div>
-          <div class="metric" style="padding:10px 14px">
-            <div class="metric-label">Zone B · Xe máy</div>
-            <div class="metric-val" style="font-size:18px" id="zb-avail">—</div>
-            <div class="metric-sub">ô còn trống</div>
-          </div>
-          <div class="metric" style="padding:10px 14px">
-            <div class="metric-label">Zone C · Xe tải</div>
-            <div class="metric-val" style="font-size:18px" id="zc-avail">—</div>
-            <div class="metric-sub">ô còn trống</div>
-          </div>
-        </div>
-        <div class="lot-wrap"><div class="lot-grid" id="lot-full" style="grid-template-columns:repeat(8,1fr)"></div></div>
+        <div class="card-title"><i class="fa fa-map"></i> Sơ đồ chi tiết — các khu xe riêng biệt</div>
+        <div id="lot-full-zones"></div>
         <div class="legend" style="margin-top:12px">
           <div class="leg"><div class="leg-dot" style="background:#27AE60"></div>Trống</div>
           <div class="leg"><div class="leg-dot" style="background:#C0392B"></div>Đỗ xe</div>
-          <div class="leg"><div class="leg-dot" style="background:#D68910"></div>Đặt trước</div>
           <div class="leg"><div class="leg-dot" style="background:#4F8EF7"></div>Đang vào</div>
           <div class="leg"><div class="leg-dot" style="background:#9B59B6"></div>Đang ra</div>
           <div class="leg"><div class="leg-dot" style="background:#2A2D4A"></div>Hỏng</div>
@@ -328,9 +446,9 @@ input[type=range]{flex:1;accent-color:var(--accent)}
       <div class="admin-grid">
         <div class="card">
           <div class="card-title"><i class="fa fa-coins"></i> Cấu hình giá đỗ</div>
-          <div class="rate-row"><span class="rate-label">Zone A (Ô tô)</span><input class="rate-input" id="rate-a" type="number" value="15000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
+          <div class="rate-row"><span class="rate-label">Zone A (Ô tô < 7 chỗ)</span><input class="rate-input" id="rate-a" type="number" value="15000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
           <div class="rate-row"><span class="rate-label">Zone B (Xe máy)</span><input class="rate-input" id="rate-b" type="number" value="8000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
-          <div class="rate-row"><span class="rate-label">Zone C (Xe tải)</span><input class="rate-input" id="rate-c" type="number" value="25000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
+          <div class="rate-row"><span class="rate-label">Zone C (Xe 7-16 chỗ)</span><input class="rate-input" id="rate-c" type="number" value="25000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
           <div class="btn-row" style="margin-top:12px">
             <button class="btn btn-success btn-sm" onclick="saveRates()"><i class="fa fa-save"></i> Lưu giá</button>
           </div>
@@ -390,9 +508,9 @@ input[type=range]{flex:1;accent-color:var(--accent)}
     <input id="e-plate" placeholder="VD: 51A-12345" style="text-transform:uppercase">
     <label>Loại xe</label>
     <select id="e-type">
-      <option value="car">🚗 Ô tô (Zone A)</option>
-      <option value="motorbike">🏍 Xe máy (Zone B)</option>
-      <option value="truck">🚛 Xe tải (Zone C)</option>
+      <option value="car">🚗 Ô tô — Zone A</option>
+      <option value="motorbike">🏍 Xe máy — Zone B</option>
+      <option value="truck">🚛 Xe 7-16 chỗ — Zone C</option>
     </select>
     <div class="modal-btns">
       <button class="btn btn-sm" onclick="closeModal('entry-modal')">Huỷ</button>
@@ -429,12 +547,46 @@ input[type=range]{flex:1;accent-color:var(--accent)}
 
 <script>
 // ════════════════════════════════════════════════════════════
+// ZONE DEFINITIONS — Khu vực riêng cho từng loại xe
+// ════════════════════════════════════════════════════════════
+const ZONE_CONFIG = {
+  A: {
+    label: 'Zone A',
+    description: '🚗 Ô tô dưới 7 chỗ',
+    color: 'var(--zone-a-head)',
+    bgClass: 'zone-group-a',
+    badgeClass: 'zone-badge-a',
+    gridClass: 'zone-grid-a',
+    cols: 5
+  },
+  B: {
+    label: 'Zone B',
+    description: '🏍 Xe máy',
+    color: 'var(--zone-b-head)',
+    bgClass: 'zone-group-b',
+    badgeClass: 'zone-badge-b',
+    gridClass: 'zone-grid-b',
+    cols: 4
+  },
+  C: {
+    label: 'Zone C',
+    description: '🚛 Ô tô 7-16 chỗ',
+    color: 'var(--zone-c-head)',
+    bgClass: 'zone-group-c',
+    badgeClass: 'zone-badge-c',
+    gridClass: 'zone-grid-c',
+    cols: 4
+  }
+};
+
+// ════════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════════
 let autoRunning = false;
 let autoTimer   = null;
 let simSpeed    = 3;
 let occChart    = null;
+let currentStream = null;
 
 // ════════════════════════════════════════════════════════════
 // CLOCK
@@ -473,6 +625,71 @@ async function api(url, method='GET', body=null) {
 }
 
 // ════════════════════════════════════════════════════════════
+// CORE: RENDER ZONE SEPARATED LAYOUT
+// ════════════════════════════════════════════════════════════
+
+/**
+ * Render slots grouped by zone — mỗi zone là một khu riêng biệt
+ * có header, màu nền, và grid slots riêng.
+ */
+function renderSlotsByZone(containerId, slots, compact) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  // Group slots by zone
+  const grouped = { A: [], B: [], C: [] };
+  slots.forEach(s => {
+    const z = s.zone;
+    if (grouped[z]) grouped[z].push(s);
+  });
+
+  // Zone order
+  const zoneOrder = ['A', 'B', 'C'];
+
+  el.innerHTML = zoneOrder.map(zoneKey => {
+    const cfg = ZONE_CONFIG[zoneKey];
+    const zoneSlots = grouped[zoneKey] || [];
+    if (zoneSlots.length === 0) return '';
+
+    const total = zoneSlots.length;
+    const occupied = zoneSlots.filter(s => s.state === 'occupied' || s.state === 'entering' || s.state === 'exiting').length;
+    const pct = total > 0 ? Math.round(occupied / total * 100) : 0;
+
+    // Render each slot card
+    const slotHtml = zoneSlots.map(s => {
+      const plate = s.plate ? `<div class="slot-plate">${s.plate.length > 6 ? s.plate.slice(-6) : s.plate}</div>` : '';
+      let stateClass = s.state;
+      if (stateClass === 'occupied' && s.plate) {
+        // Keep occupied class as-is
+      }
+      return `<div class="slot ${stateClass}" title="[${s.id}] ${stateClass.toUpperCase()}${s.plate ? ' · ' + s.plate : ''}" onclick="slotClick('${s.id}','${s.state}','${s.plate||''}')">
+        <div class="slot-id">${s.id}</div>${plate}
+      </div>`;
+    }).join('');
+
+    const cols = compact ? Math.min(cfg.cols, 4) : cfg.cols;
+
+    return `<div class="zone-group ${cfg.bgClass}">
+      <div class="zone-header">
+        <div class="zone-title">
+          <span class="zone-badge ${cfg.badgeClass}">${zoneKey}</span>
+          <div>
+            <div class="zone-name">${cfg.label}</div>
+            <div class="zone-desc">${cfg.description}</div>
+          </div>
+        </div>
+        <div class="zone-stats">
+          <strong>${occupied}</strong>/${total} đang đỗ · <strong>${pct}%</strong>
+        </div>
+      </div>
+      <div class="zone-grid ${cfg.gridClass}" style="grid-template-columns:repeat(${cols},1fr)">
+        ${slotHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════
 // STATUS REFRESH
 // ════════════════════════════════════════════════════════════
 async function refreshStatus() {
@@ -494,9 +711,10 @@ async function refreshStatus() {
     setEl('zc-avail', z.C?.available ?? '—');
     renderZoneOcc(z);
   }
-  // Lot grids
-  renderLotGrid('lot-mini', slots, 10);
-  renderLotGrid('lot-full', slots, 8);
+
+  // Render zone-separated lot layouts
+  renderSlotsByZone('lot-mini-zones', slots, true);
+  renderSlotsByZone('lot-full-zones', slots, false);
 
   // Feed
   const feed = await api('/api/feed');
@@ -523,24 +741,8 @@ function fmtMoney(n) {
   return Number(n).toLocaleString('vi-VN') + 'đ';
 }
 
-// ════════════════════════════════════════════════════════════
-// LOT GRID
-// ════════════════════════════════════════════════════════════
-function renderLotGrid(containerId, slots, cols) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  el.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-  el.innerHTML = slots.map(s => {
-    const plate = s.plate ? `<div class="slot-plate">${s.plate.slice(-6)}</div>` : '';
-    return `<div class="slot ${s.state}" title="${s.id} · ${s.state}${s.plate?' · '+s.plate:''}" onclick="slotClick('${s.id}','${s.state}','${s.plate}')">
-      <div class="slot-id">${s.id}</div>${plate}
-    </div>`;
-  }).join('');
-}
-
 function slotClick(id, state, plate) {
-  const msg = `Ô: ${id}\nTrạng thái: ${state}\nXe: ${plate || '(trống)'}`;
-  showToast(`${id} — ${state}${plate?' — '+plate:''}`, 'info');
+  showToast(`${id} — ${state}${plate ? ' — ' + plate : ''}`, 'info');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -549,7 +751,7 @@ function slotClick(id, state, plate) {
 function renderZoneOcc(zones) {
   const el = document.getElementById('zone-occ');
   if (!el) return;
-  const names = {A:'Zone A · Ô tô', B:'Zone B · Xe máy', C:'Zone C · Xe tải'};
+  const names = {A:'Zone A · Ô tô < 7', B:'Zone B · Xe máy', C:'Zone C · 7-16 chỗ'};
   const cols = {A:'#27AE60', B:'#4F8EF7', C:'#F39C12'};
   el.innerHTML = Object.entries(zones).map(([z, info]) => {
     const pct = info.total ? Math.round(info.occupied / info.total * 100) : 0;
@@ -582,6 +784,7 @@ function renderFeed(items) {
     else if (f.event === 'vehicle_exited') detail = `← ${p.slot_id} · ${fmtMoney(p.fee)} · ${p.method}`;
     else if (f.event === 'ocr_failed') detail = `Conf: ${(p.confidence*100).toFixed(0)}%`;
     else if (f.event === 'lot_full') detail = 'Bãi đỗ đầy';
+    else detail = p.message || '';
     return `<div class="feed-item">
       <i class="fa ${ic.icon} feed-icon" style="color:${ic.color}"></i>
       <div class="feed-body">
@@ -597,12 +800,205 @@ function renderFeed(items) {
 // OCR
 // ════════════════════════════════════════════════════════════
 async function triggerOCR() {
-  const r = await api('/api/ocr_demo', 'POST');
-  document.getElementById('cam-plate').textContent  = r.plate;
-  document.getElementById('cam-conf').textContent   = r.confidence;
+  const video = document.getElementById('video-feed');
+  if (!currentStream || !video || !video.videoWidth) {
+    showToast('Bật camera trước khi chụp', 'warn');
+    return;
+  }
+  const canvas = document.getElementById('overlay-canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+  const r = await fetch('/api/process_frame', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({image:dataUrl})});
+  const data = await r.json();
+  updateCamResult(data);
+  if (data.bbox) drawBBox(data.bbox);
+  await loadRecognitionHistory(data.plate);
+}
+
+function drawBBox(box) {
+  const canvas = document.getElementById('overlay-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const [x1, y1, x2, y2] = box;
+  ctx.strokeStyle = '#2ECC71';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+  ctx.fillStyle = '#2ECC71';
+  ctx.font = '14px Segoe UI';
+  ctx.fillText('PLATE', x1, Math.max(12, y1 - 6));
+}
+
+function updateCamResult(data) {
+  document.getElementById('cam-plate').textContent = data.plate || '—';
+  document.getElementById('cam-conf').textContent = data.confidence ?? '—';
+  document.getElementById('cam-type').textContent = data.vehicle_type || 'unknown';
   const statusEl = document.getElementById('cam-status');
-  if (r.valid) { statusEl.textContent = '✓ Hợp lệ'; statusEl.style.color = 'var(--success)'; }
-  else         { statusEl.textContent = '⚠ Cần nhập tay'; statusEl.style.color = 'var(--warn)'; }
+  if (data.valid) { statusEl.textContent = '✓ Hợp lệ'; statusEl.style.color = 'var(--success)'; }
+  else { statusEl.textContent = '⚠ Cần nhập tay'; statusEl.style.color = 'var(--warn)'; }
+  const resultBox = document.getElementById('upload-result');
+  if (resultBox) resultBox.innerHTML = `<div style="color:${data.valid ? 'var(--success)' : 'var(--warn)'}">${data.message || 'Đã xử lý ảnh'}</div>`;
+}
+
+function clearUploadOverlay() {
+  const canvas = document.getElementById('upload-overlay-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.style.display = 'none';
+}
+
+function drawUploadBBox(box, label = '') {
+  const img = document.getElementById('preview-img');
+  const canvas = document.getElementById('upload-overlay-canvas');
+  if (!img || !canvas || !box) return;
+  canvas.style.display = 'block';
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  canvas.style.width = img.clientWidth + 'px';
+  canvas.style.height = img.clientHeight + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const [x1, y1, x2, y2] = box;
+  ctx.strokeStyle = '#2ECC71';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+  ctx.fillStyle = 'rgba(46, 204, 113, 0.85)';
+  ctx.font = '22px Segoe UI';
+  ctx.textBaseline = 'top';
+  const labelText = label || 'PLATE';
+  const padding = 6;
+  const textWidth = ctx.measureText(labelText).width + padding * 2;
+  const textHeight = 28;
+  const textX = x1;
+  const textY = Math.max(0, y1 - textHeight - 6);
+  ctx.fillRect(textX, textY, textWidth, textHeight);
+  ctx.fillStyle = '#111';
+  ctx.fillText(labelText, textX + padding, textY + 4);
+}
+
+async function uploadAndReadImage() {
+  const input = document.getElementById('image-file');
+  if (!input.files || !input.files[0]) {
+    showToast('Vui lòng chọn ảnh trước', 'warn');
+    return;
+  }
+  const preview = document.getElementById('preview-img');
+  const previewBox = document.getElementById('image-preview');
+  const resultBox = document.getElementById('upload-result');
+  const file = input.files[0];
+
+  // Hiển thị preview ảnh gốc ngay lập tức
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    preview.onload = () => {
+      // Reset overlay
+      const overlayCanvas = document.getElementById('upload-overlay-canvas');
+      if (overlayCanvas) {
+        overlayCanvas.style.display = 'none';
+      }
+    };
+    preview.src = e.target.result;
+    previewBox.style.display = 'block';
+    resultBox.innerHTML = '<span style="color:var(--muted)">⏳ Đang xử lý ảnh...</span>';
+  };
+  reader.readAsDataURL(file);
+
+  // Gửi API
+  const formData = new FormData();
+  formData.append('image', file);
+  const r = await fetch('/api/process_image', { method: 'POST', body: formData });
+  const data = await r.json();
+
+  // Cập nhật kết quả OCR
+  updateCamResult(data);
+
+  // Hiển thị ảnh đã annotate (có bbox + label) từ server
+  if (data.annotated_b64) {
+    // Dùng ảnh annotated từ server (đã vẽ bbox + label)
+    preview.src = 'data:image/jpeg;base64,' + data.annotated_b64;
+    // Ẩn canvas overlay vì đã có bbox trên ảnh
+    const overlayCanvas = document.getElementById('upload-overlay-canvas');
+    if (overlayCanvas) overlayCanvas.style.display = 'none';
+    resultBox.innerHTML = `<strong>${data.plate || 'Không xác định'}</strong> · 
+      <span style="color:${data.valid ? 'var(--success)' : 'var(--warn)'}">
+        ${data.valid ? '✓ Hợp lệ' : '⚠ Không hợp lệ'}
+      </span> · ${data.message || ''}`;
+  } else if (data.bbox) {
+    // Fallback: vẽ canvas overlay nếu không có annotated image
+    drawUploadBBox(data.bbox, data.plate || 'PLATE');
+    resultBox.innerHTML = `<strong>${data.plate || 'Không xác định'}</strong> · ${data.message || 'Đã xử lý ảnh'}`;
+  } else {
+    clearUploadOverlay();
+    resultBox.innerHTML = `<strong>${data.plate || 'Không xác định'}</strong> · ${data.message || 'Đã xử lý ảnh'}`;
+  }
+
+  await loadRecognitionHistory(data.plate);
+}
+
+function drawBBox(box) {
+  const canvas = document.getElementById('overlay-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const [x1, y1, x2, y2] = box;
+  ctx.strokeStyle = '#2ECC71';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+  ctx.fillStyle = '#2ECC71';
+  ctx.font = '14px Segoe UI';
+  ctx.fillText('PLATE', x1, Math.max(12, y1 - 6));
+}
+
+function updateCamResult(data) {
+  document.getElementById('cam-plate').textContent = data.plate || '—';
+  document.getElementById('cam-conf').textContent = data.confidence ?? '—';
+  document.getElementById('cam-type').textContent = data.vehicle_type || 'unknown';
+  const statusEl = document.getElementById('cam-status');
+  if (data.valid) { statusEl.textContent = '✓ Hợp lệ'; statusEl.style.color = 'var(--success)'; }
+  else { statusEl.textContent = '⚠ Cần nhập tay'; statusEl.style.color = 'var(--warn)'; }
+}
+
+function clearUploadOverlay() {
+  const canvas = document.getElementById('upload-overlay-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvas.style.display = 'none';
+}
+
+function drawUploadBBox(box, label = '') {
+  const img = document.getElementById('preview-img');
+  const canvas = document.getElementById('upload-overlay-canvas');
+  if (!img || !canvas || !box) return;
+  canvas.style.display = 'block';
+  canvas.width = img.naturalWidth || img.width;
+  canvas.height = img.naturalHeight || img.height;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const [x1, y1, x2, y2] = box;
+  const scaleX = canvas.width / (img.naturalWidth || 1);
+  const scaleY = canvas.height / (img.naturalHeight || 1);
+  const sx1 = x1 * scaleX, sy1 = y1 * scaleY;
+  const sx2 = x2 * scaleX, sy2 = y2 * scaleY;
+  ctx.strokeStyle = '#2ECC71';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(sx1, sy1, sx2 - sx1, sy2 - sy1);
+  ctx.fillStyle = 'rgba(46, 204, 113, 0.85)';
+  ctx.font = '22px Segoe UI';
+  ctx.textBaseline = 'top';
+  const labelText = label || 'PLATE';
+  const padding = 6;
+  ctx.fillStyle = 'rgba(46, 204, 113, 0.85)';
+  const textWidth = ctx.measureText(labelText).width + padding * 2;
+  const textHeight = 28;
+  const textX = sx1;
+  const textY = Math.max(0, sy1 - textHeight - 6);
+  ctx.fillRect(textX, textY, textWidth, textHeight);
+  ctx.fillStyle = '#111';
+  ctx.fillText(labelText, textX + padding, textY + 4);
 }
 
 // ════════════════════════════════════════════════════════════
@@ -785,6 +1181,7 @@ document.querySelectorAll('.modal-overlay').forEach(o => {
 // BOOT
 // ════════════════════════════════════════════════════════════
 refreshStatus();
+loadRecognitionHistory();
 setInterval(refreshStatus, 3000);   // auto-refresh mỗi 3 giây
 </script>
 </body>

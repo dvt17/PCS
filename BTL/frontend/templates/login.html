@@ -35,10 +35,10 @@ input:focus{border-color:#4F8EF7}
     {% if error %}<p class="error">{{ error }}</p>{% endif %}
     <button class="btn" type="submit">ĐĂNG NHẬP</button>
   </form>
-  <div class="hints">
-    <p>Admin: <span>admin / admin123</span></p>
-    <p>Nhân viên: <span>staff1 / staff123</span></p>
-  </div>
+  <p style="margin-top:18px;font-size:13px;color:#8B8FA8">
+    Chưa có tài khoản?
+    <a href="{{ url_for('register') }}" style="color:#4F8EF7;text-decoration:none;font-weight:600">Đăng ký</a>
+  </p>
 </div>
 </body>
 </html>

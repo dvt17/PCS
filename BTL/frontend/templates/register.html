@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PCS Smart Parking — Đăng ký</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0F1117;font-family:'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{background:#1A1D2E;border:1px solid #2A2D4A;border-radius:16px;padding:40px 36px;width:400px;text-align:center}
+.logo{font-size:52px;margin-bottom:8px}
+h1{color:#EAEAEA;font-size:20px;font-weight:600;margin-bottom:4px}
+.sub{color:#8B8FA8;font-size:13px;margin-bottom:20px}
+label{display:block;text-align:left;color:#8B8FA8;font-size:12px;margin-bottom:5px;margin-top:12px}
+input,select{width:100%;background:#252840;border:1px solid #3A3D5C;border-radius:8px;padding:11px 14px;color:#EAEAEA;font-size:14px;outline:none;transition:border .2s}
+input:focus,select:focus{border-color:#4F8EF7}
+select option{background:#1A1D2E}
+.btn{width:100%;margin-top:18px;padding:12px;background:#4F8EF7;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.88}
+.error{color:#E74C3C;font-size:13px;margin-top:10px;background:#2D1A1A;padding:8px 12px;border-radius:6px}
+.success{color:#27AE60;font-size:13px;margin-top:10px;background:#1A2D1A;padding:8px 12px;border-radius:6px}
+.hint{color:#8B8FA8;font-size:12px;margin-top:14px}
+.hint a{color:#4F8EF7;text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🅿</div>
+  <h1>Đăng ký tài khoản</h1>
+  <p class="sub">PCS Smart Parking</p>
+  <form method="POST">
+    <label>Họ và tên</label>
+    <input name="full_name" placeholder="Nguyễn Văn A" required>
+
+    <label>Tên đăng nhập</label>
+    <input name="username" placeholder="ten_dang_nhap" required>
+
+    <label>Mật khẩu</label>
+    <input name="password" type="password" placeholder="••••••••" required>
+
+    <label>Vai trò</label>
+    <select name="role">
+      <option value="owner">Chủ xe</option>
+      <option value="staff">Nhân viên</option>
+    </select>
+
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    {% if success %}<p class="success">{{ success }}</p>{% endif %}
+
+    <button class="btn" type="submit">ĐĂNG KÝ</button>
+  </form>
+  <p class="hint">Đã có tài khoản? <a href="{{ url_for('login') }}">Đăng nhập</a></p>
+</div>
+</body>
+</html>

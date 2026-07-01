@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PCS Smart Parking — Chủ xe</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{
+  --bg:#0F1117;--surface:#1A1D2E;--card:#252840;--border:#2A2D4A;
+  --accent:#4F8EF7;--success:#2ECC71;--warn:#F39C12;--danger:#E74C3C;
+  --text:#EAEAEA;--muted:#8B8FA8;--purple:#9B59B6;--orange:#E67E22;
+  --zone-a-bg:#1A2E1A;--zone-a-border:#2ECC7166;
+  --zone-b-bg:#1A1A2E;--zone-b-border:#4F8EF766;
+  --zone-c-bg:#2E1A1A;--zone-c-border:#E74C3C66;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+.header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700}
+.logo-icon{font-size:24px}
+.live-badge{background:#1A1A3A;color:var(--purple);border:1px solid #9B59B655;padding:3px 10px;border-radius:20px;font-size:11px;display:flex;align-items:center;gap:5px}
+.live-dot{width:7px;height:7px;background:var(--purple);border-radius:50%;animation:blink 1.2s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.header-right{display:flex;align-items:center;gap:14px}
+.clock{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.user-info{font-size:12px;color:var(--muted)}
+.btn-logout{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+.btn-logout:hover{border-color:var(--danger);color:var(--danger)}
+.tabs{display:flex;gap:2px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border)}
+.tab{padding:10px 18px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.main{padding:14px;overflow-y:auto;flex:1}
+.content{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.metric-label{font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.metric-val{font-size:24px;font-weight:700;color:var(--text);line-height:1}
+.metric-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.card-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.panel{display:none}
+.panel.active{display:contents}
+.zone-row{margin-bottom:10px}
+.zone-header{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.zone-track{height:8px;background:var(--surface);border-radius:4px;overflow:hidden}
+.zone-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.btn{padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn:hover{opacity:.85;transform:translateY(-1px)}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-success{background:var(--success);border-color:var(--success);color:#fff}
+.btn-danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn-warn{background:var(--warn);border-color:var(--warn);color:#fff}
+.btn-purple{background:var(--purple);border-color:var(--purple);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px}
+.history-table-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);margin-top:8px}
+.history-table{width:100%;border-collapse:collapse;font-size:12px}
+.history-table th,.history-table td{padding:10px 10px;border-bottom:1px solid var(--border);text-align:left}
+.history-table th{background:rgba(79,142,247,.12);color:var(--accent);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.history-table tr:last-child td{border-bottom:none}
+.history-table .col-time{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.history-table .col-plate{font-weight:700;color:var(--text)}
+.history-table .col-status{font-weight:600}
+.badge{display:inline-block;padding:2px 6px;border-radius:999px;font-size:10px;font-weight:600;text-transform:uppercase;margin-left:4px}
+.badge.valid{background:rgba(46,204,113,.15);color:var(--success)}
+.badge.warn{background:rgba(243,156,18,.15);color:var(--warn)}
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid;z-index:9999;animation:slideUp .3s ease;pointer-events:none}
+@keyframes slideUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.toast-success{background:#163D22;color:var(--success);border-color:#27AE6066}
+.toast-error{background:#3D1616;color:var(--danger);border-color:#C0392B66}
+.toast-info{background:#162040;color:var(--accent);border-color:#4F8EF766}
+.toast-warn{background:#3D2E10;color:var(--warn);border-color:#D6891066}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.receipt{background:var(--surface);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;white-space:pre;color:var(--text);margin-top:10px;max-height:240px;overflow-y:auto}
+.status-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vehicle-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;gap:14px;align-items:center}
+.vehicle-icon{font-size:36px;flex-shrink:0}
+.vehicle-info{flex:1}
+.vehicle-plate{font-size:18px;font-weight:700;color:var(--text);letter-spacing:.08em}
+.vehicle-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.vehicle-status{font-size:11px;margin-top:4px}
+.quick-pay{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;gap:10px;align-items:center}
+.quick-pay input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;outline:none}
+.quick-pay input:focus{border-color:var(--accent)}
+.quick-pay select{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;outline:none}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo"><span class="logo-icon">🅿</span><span>PCS Smart Parking</span></div>
+  <div class="header-right">
+    <div class="live-badge"><span class="live-dot"></span> CHỦ XE</div>
+    <span class="clock" id="clock">--:--:--</span>
+    <span class="user-info"><i class="fa fa-user"></i> {{ full_name }} ({{ username }})</span>
+    <a href="/logout"><button class="btn-logout"><i class="fa fa-right-from-bracket"></i> Đăng xuất</button></a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="content">
+
+    <!-- Metrics -->
+    <div class="metrics">
+      <div class="metric"><div class="metric-label"><i class="fa fa-parking"></i> Tổng ô đỗ</div><div class="metric-val" id="m-total">—</div><div class="metric-sub">tại bãi</div></div>
+      <div class="metric"><div class="metric-label"><i class="fa fa-square-check"></i> Còn trống</div><div class="metric-val" id="m-avail">—</div><div class="metric-sub" id="m-avail-detail">ô</div></div>
+      <div class="metric"><div class="metric-label"><i class="fa fa-car"></i> Đang đỗ</div><div class="metric-val" id="m-occ">—</div><div class="metric-sub" id="m-occ-pct">— % lấp đầy</div></div>
+      <div class="metric"><div class="metric-label"><i class="fa fa-money-bill-wave"></i> Doanh thu hôm nay</div><div class="metric-val" id="m-rev">—</div><div class="metric-sub" id="m-txn">— giao dịch</div></div>
+    </div>
+
+    <!-- Zone availability bars -->
+    <div class="card">
+      <div class="card-title"><i class="fa fa-layer-group"></i> Số lượng chỗ đỗ còn trống theo khu</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="zone-avail-cards">
+        <div class="metric" style="text-align:center;padding:16px">
+          <div style="font-size:32px;font-weight:700;color:#27AE60" id="za-avail">—</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Zone A<br><span style="font-size:10px">🚗 Ô tô</span></div>
+        </div>
+        <div class="metric" style="text-align:center;padding:16px">
+          <div style="font-size:32px;font-weight:700;color:#4F8EF7" id="zb-avail">—</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Zone B<br><span style="font-size:10px">🏍 Xe máy</span></div>
+        </div>
+        <div class="metric" style="text-align:center;padding:16px">
+          <div style="font-size:32px;font-weight:700;color:#E74C3C" id="zc-avail">—</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Zone C<br><span style="font-size:10px">🚛 Xe 7-16 chỗ</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" style="background:transparent;border:none;padding:0">
+      <button class="tab active" onclick="switchTab('history',this)"><i class="fa fa-clock-rotate-left"></i> Lịch sử gửi xe</button>
+      <button class="tab" onclick="switchTab('payment',this)"><i class="fa fa-credit-card"></i> Thanh toán</button>
+    </div>
+
+    <!-- History tab -->
+    <div id="tab-history" class="panel active" style="display:flex;flex-direction:column;gap:12px">
+      <!-- My vehicles -->
+      <div class="card">
+        <div class="card-title"><i class="fa fa-car"></i> Xe của tôi</div>
+        <div id="my-vehicles"></div>
+      </div>
+      <!-- Transaction history -->
+      <div class="card">
+        <div class="card-title"><i class="fa fa-clock-rotate-left"></i> Lịch sử giao dịch gửi xe</div>
+        <div class="history-table-wrap">
+          <table class="history-table">
+            <thead><tr><th>Thời gian ra</th><th>Biển số</th><th>Chỗ đỗ</th><th>Thời gian</th><th>Phí</th><th>PTTT</th><th>Trạng thái</th></tr></thead>
+            <tbody id="txn-history"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment tab -->
+    <div id="tab-payment" class="panel" style="display:none;flex-direction:column;gap:12px">
+      <div class="card">
+        <div class="card-title"><i class="fa fa-credit-card"></i> Thanh toán trực tuyến</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Thanh toán phí đỗ xe trực tuyến qua MoMo, VNPAY hoặc ZaloPay.</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div>
+            <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px">Biển số xe cần thanh toán</label>
+            <input id="pay-plate" placeholder="VD: 51A-12345" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:16px;outline:none;text-transform:uppercase;font-weight:600;letter-spacing:.08em">
+          </div>
+          <div>
+            <label style="display:block;font-size:11px;color:var(--muted);margin-bottom:4px">Phương thức thanh toán</label>
+            <select id="pay-method" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;outline:none">
+              <option value="momo">📱 MoMo</option>
+              <option value="vnpay">💳 VNPAY</option>
+              <option value="zalopay">⚡ ZaloPay</option>
+              <option value="cash">💵 Tiền mặt (tại bãi)</option>
+            </select>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-purple" onclick="doOwnerPayment()" style="flex:1;justify-content:center;padding:12px"><i class="fa fa-check"></i> Thanh toán ngay</button>
+          </div>
+          <div id="pay-receipt-box" style="display:none">
+            <div class="card-title" style="margin-top:8px"><i class="fa fa-receipt"></i> Hoá đơn điện tử</div>
+            <div class="receipt" id="pay-receipt-text"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="fa fa-clock-rotate-left"></i> Giao dịch chưa thanh toán</div>
+        <div class="history-table-wrap">
+          <table class="history-table">
+            <thead><tr><th>Biển số</th><th>Giờ vào</th><th>Chỗ đỗ</th><th>Phí dự kiến</th><th>Thao tác</th></tr></thead>
+            <tbody id="pending-txns"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast" style="display:none"></div>
+
+<script>
+function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleDateString('vi-VN')+'  '+n.toLocaleTimeString('vi-VN')}
+setInterval(updateClock,1000);updateClock();
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  ['history','payment'].forEach(t=>{const e=document.getElementById('tab-'+t);if(e)e.style.display='none'});
+  if(btn)btn.classList.add('active');
+  const p=document.getElementById('tab-'+name);if(p)p.style.display='flex';
+}
+
+async function api(url,method='GET',body=null){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body)opts.body=JSON.stringify(body);
+  return(await fetch(url,opts)).json();
+}
+
+function setEl(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+function fmtMoney(n){return Number(n).toLocaleString('vi-VN')+'đ'}
+
+async function refreshStatus(){
+  const s=await api('/api/status');
+  setEl('m-total',s.total);
+  setEl('m-occ',s.occupied);
+  setEl('m-occ-pct',s.occupancy_pct+'% lấp đầy');
+  setEl('m-avail',s.available);
+  setEl('m-rev',fmtMoney(s.revenue_today));
+  setEl('m-txn',s.txn_count+' giao dịch');
+  const z=s.zones;
+  if(z){
+    setEl('za-avail',z.A?.available??'—');
+    setEl('zb-avail',z.B?.available??'—');
+    setEl('zc-avail',z.C?.available??'—');
+  }
+}
+
+async function loadMyVehicles(){
+  const v=await api('/api/my_vehicles');
+  const el=document.getElementById('my-vehicles');
+  if(!el)return;
+  el.innerHTML=v&&v.plate?`<div class="vehicle-card">
+    <div class="vehicle-icon">${v.vehicle_type==='motorbike'?'🏍':'🚗'}</div>
+    <div class="vehicle-info">
+      <div class="vehicle-plate">${v.plate}</div>
+      <div class="vehicle-meta">${v.vehicle_type||'car_under_7'} · ${v.owner_name||'—'}</div>
+    </div>
+  </div>`:'<div style="color:var(--muted);font-size:13px;padding:8px 0">Chưa có thông tin xe</div>';
+}
+
+async function loadMyTransactions(){
+  const txns=await api('/api/my_transactions');
+  const el=document.getElementById('txn-history');
+  if(!el)return;
+  el.innerHTML=txns.length?txns.map(t=>{
+    const statusHtml=t.payment_status==='paid'?'<span class="badge valid">Đã TT</span>':'<span class="badge warn">Chưa TT</span>';
+    return `<tr>
+      <td class="col-time">${t.exit_time||'—'}</td>
+      <td class="col-plate">${t.plate}</td>
+      <td>${t.slot_id||'—'}</td>
+      <td>${t.billed_hours||'—'} giờ</td>
+      <td style="color:var(--success);font-weight:600">${t.net_fee?fmtMoney(t.net_fee):'—'}</td>
+      <td style="color:var(--muted)">${(t.payment_method||'cash').toUpperCase()}</td>
+      <td>${statusHtml}</td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="7" style="padding:14px;color:var(--muted);text-align:center">Chưa có giao dịch nào</td></tr>';
+}
+
+async function loadPendingTxns(){
+  const txns=await api('/api/my_transactions');
+  const el=document.getElementById('pending-txns');
+  if(!el)return;
+  const pending=txns.filter(t=>t.payment_status==='pending').slice(0,10);
+  el.innerHTML=pending.length?pending.map(t=>`<tr>
+    <td class="col-plate">${t.plate}</td>
+    <td>${t.entry_time||'—'}</td>
+    <td>${t.slot_id||'—'}</td>
+    <td style="color:var(--warn);font-weight:600">${t.net_fee?fmtMoney(t.net_fee):'—'}</td>
+    <td><button class="btn btn-success btn-sm" onclick="quickPay('${t.plate}')"><i class="fa fa-credit-card"></i> TT ngay</button></td>
+  </tr>`).join(''):'<tr><td colspan="5" style="padding:14px;color:var(--muted);text-align:center">Không có giao dịch chưa thanh toán</td></tr>';
+}
+
+async function doOwnerPayment(){
+  const plate=document.getElementById('pay-plate').value.trim().toUpperCase();
+  const method=document.getElementById('pay-method').value;
+  if(!plate){showToast('Nhập biển số cần thanh toán','warn');return}
+  const r=await api('/api/my_payment','POST',{plate,method});
+  showToast(r.message,r.success?'success':'error');
+  if(r.success&&r.receipt){
+    document.getElementById('pay-receipt-text').textContent=r.receipt;
+    document.getElementById('pay-receipt-box').style.display='block';
+    loadMyTransactions();
+    loadPendingTxns();
+  }
+}
+
+function quickPay(plate){
+  document.getElementById('pay-plate').value=plate;
+  switchTab('payment',document.querySelector('.tab[onclick*="payment"]'));
+  document.getElementById('pay-method').focus();
+}
+
+let toastTimer=null;
+function showToast(msg,type='info'){
+  const el=document.getElementById('toast');el.textContent=msg;el.className='toast toast-'+type;el.style.display='block';
+  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.style.display='none'},3000);
+}
+
+refreshStatus();
+loadMyVehicles();
+loadMyTransactions();
+loadPendingTxns();
+setInterval(refreshStatus,3000);
+</script>
+</body>
+</html>

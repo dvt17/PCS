@@ -2,8 +2,11 @@
 # Cài đặt: pip install -r requirements.txt
 
 flask>=3.0.0
+pymysql>=1.1.0
+mysql-connector-python>=8.4.0
 
 # AI / Camera (tùy chọn)
-# ultralytics>=8.0.0
-# easyocr>=1.7.0
-# opencv-python>=4.8.0
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+easyocr>=1.7.0
+numpy>=1.26.0

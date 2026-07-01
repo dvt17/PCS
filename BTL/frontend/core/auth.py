@@ -105,6 +105,7 @@ def seed_default_users() -> None:
     defaults = [
         ("admin", "admin123", Role.ADMIN, "Quản trị viên"),
         ("staff1", "staff123", Role.STAFF, "Nhân viên 1"),
+        ("owner", "owner123", Role.OWNER, "Chủ xe Nguyễn Văn A"),
     ]
     for username, password, role, name in defaults:
         try:
