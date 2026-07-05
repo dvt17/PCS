@@ -1,9 +1,9 @@
 """
 workflow.py — Điều phối luồng vào / ra xe
 PCS Smart Parking System
+Chỉ còn 2 loại xe: Ô tô và Xe máy.
+Tự động sắp xếp xe vào chỗ trống và thông báo.
 """
-
-
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from typing import Callable, Optional, Tuple
 from core.database import (get_open_transaction, get_vehicle, log_event, save_transaction,
                             upsert_vehicle)
 from core.ocr_engine import OCRResult, PlateRecognizer
-from core.parking_lot import ParkingLot, ZONE_VEHICLE_MAP
+from core.parking_lot import ParkingLot, VEHICLE_ZONE_MAP, ZONE_VEHICLE_MAP
 from core.payment import GatewayType, PaymentGateway, PaymentRequest, PaymentResponse
 from core.pricing import Pricing
 from core.transaction import PaymentMethod, Transaction, TransactionLedger
@@ -31,7 +31,7 @@ EventCallback = Callable[[str, dict], None]   # (event_name, payload)
 class ParkingWorkflow:
     """
     Điều phối toàn bộ luồng nghiệp vụ:
-      Entry : Camera → OCR → So sánh DB → Mở barrier → Cập nhật slot
+      Entry : Camera → OCR → Detect loại xe → Tự động tìm chỗ trống → Thông báo → Mở barrier
       Exit  : Camera → OCR → Tính phí → Thanh toán → Mở barrier → Giải phóng slot
     """
 
@@ -78,7 +78,7 @@ class ParkingWorkflow:
           1. Override từ người dùng (nếu có)
           2. vehicle_type từ YOLO pipeline (OCRResult.vehicle_type)
           3. Tra cứu DB nếu xe đã tồn tại
-          4. Fallback: CAR_UNDER_7
+          4. Fallback: CAR
         """
         if override is not None:
             return override
@@ -86,20 +86,21 @@ class ParkingWorkflow:
         # Từ OCR pipeline (YOLO class name → VehicleType)
         vt_str = ocr.vehicle_type if hasattr(ocr, 'vehicle_type') and ocr.vehicle_type else ""
         if vt_str and vt_str != "unknown":
-            try:
-                return VehicleType(vt_str)
-            except (ValueError, TypeError):
-                pass
+            if vt_str == "motorbike":
+                return VehicleType.MOTORBIKE
+            # Mọi loại khác (car, truck, bus, van, ...) → CAR
+            return VehicleType.CAR
 
         # Từ DB
         vehicle = get_vehicle(ocr.plate) if ocr.plate else None
         if vehicle and vehicle.get("vehicle_type"):
-            try:
-                return VehicleType(vehicle["vehicle_type"])
-            except (ValueError, TypeError):
-                pass
+            vt_db = vehicle["vehicle_type"]
+            if vt_db == "motorbike":
+                return VehicleType.MOTORBIKE
+            # Mọi loại khác → CAR
+            return VehicleType.CAR
 
-        return VehicleType.CAR_UNDER_7
+        return VehicleType.CAR
 
     # ═══════════════════════════════════════════════════════════════════
     # ENTRY
@@ -114,6 +115,7 @@ class ParkingWorkflow:
         """
         Trả về (success, message, transaction).
         vehicle_type: nếu None sẽ tự động xác định từ YOLO pipeline hoặc DB.
+        Tự động sắp xếp xe vào chỗ trống phù hợp.
         """
         # 1. Nhận diện biển số
         if manual_plate:
@@ -137,19 +139,23 @@ class ParkingWorkflow:
 
         # 3. Xác định loại xe (tự động từ YOLO nếu không override)
         vtype = self._resolve_vehicle_type(ocr, vehicle_type)
+        zone = VEHICLE_ZONE_MAP.get(vtype)
+
+        # 4. Tự động tìm chỗ trống phù hợp với loại xe
         suggested = self.lot.suggest_slot(vtype)
         if not suggested:
-            self._emit("lot_full", vehicle_type=vtype.value)
-            return False, f"Bãi đỗ đầy (zone {[z for z,v in ZONE_VEHICLE_MAP.items() if v==vtype][0].value})", None
+            zone_name = zone.value if zone else "?"
+            self._emit("lot_full", vehicle_type=vtype.value, zone=zone_name)
+            return False, f"Bãi đỗ đầy (Zone {zone_name} — {vtype.display_name})", None
 
-        # 4. Lưu xe vào DB
+        # 5. Lưu xe vào DB
         upsert_vehicle(plate, vtype.value)
 
-        # 5. Cập nhật slot
+        # 6. Cập nhật slot
         suggested.occupy(plate)
         self.lot.save()
 
-        # 6. Tạo giao dịch
+        # 7. Tạo giao dịch
         pricing_type = self._pricing_type_for(plate, vtype)
         rule = self.pricing.get_pricing(vtype, pricing_type)
         txn = Transaction(
@@ -165,8 +171,20 @@ class ParkingWorkflow:
         save_transaction(txn.to_dict())
         log_event("entry", plate=plate, slot_id=suggested.slot_id, confidence=ocr.confidence, image_path=image_path)
 
-        self._emit("vehicle_entered", plate=plate, slot_id=suggested.slot_id, zone=suggested.zone.value)
-        msg = f"Xe {plate} vào ô {suggested.slot_id} (Zone {suggested.zone.value})"
+        # 8. Thông báo vị trí đỗ
+        zone_name = vtype.display_name
+        slot_info = f"{suggested.slot_id} (Zone {suggested.zone.value})"
+        notification_msg = f"🚗 Xe {plate} → {slot_info}"
+
+        self._emit("vehicle_entered",
+                   plate=plate,
+                   slot_id=suggested.slot_id,
+                   zone=suggested.zone.value,
+                   vehicle_type=vtype.value,
+                   vehicle_label=vtype.display_name,
+                   message=notification_msg)
+
+        msg = f"✅ {notification_msg}"
         return True, msg, txn
 
     # ═══════════════════════════════════════════════════════════════════
@@ -206,7 +224,14 @@ class ParkingWorkflow:
             else:
                 return False, f"Không tìm thấy giao dịch mở cho biển số {plate}", None
 
-        vehicle_type = VehicleType(get_vehicle(plate).get("vehicle_type", "car_under_7")) if get_vehicle(plate) else VehicleType.CAR_UNDER_7
+        vehicle = get_vehicle(plate)
+        vt_db = vehicle.get("vehicle_type", "car") if vehicle else "car"
+        # Map DB type to new 2-type system (chỉ 2 loại: car, motorbike)
+        if vt_db == "motorbike":
+            vehicle_type = VehicleType.MOTORBIKE
+        else:
+            vehicle_type = VehicleType.CAR
+
         pricing_type = self._pricing_type_for(plate, vehicle_type)
         rule = self.pricing.get_pricing(vehicle_type, pricing_type)
         txn.hourly_rate = rule.hourly_rate if pricing_type == "non_combo" else 0

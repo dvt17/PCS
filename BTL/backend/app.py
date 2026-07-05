@@ -34,11 +34,11 @@ from core.database import (
     upsert_vehicle,
 )
 from core.ocr_engine import PlateRecognizer
-from core.parking_lot import ParkingLot, Zone
+from core.parking_lot import ParkingLot, Zone, VEHICLE_ZONE_MAP
 from core.payment import GatewayType, PaymentGateway
 from core.reports import ReportEngine
 from core.transaction import PaymentMethod, TransactionLedger
-from core.vehicle import VehicleType
+from core.vehicle import Vehicle, VehicleType
 from core.workflow import ParkingWorkflow
 
 try:
@@ -79,6 +79,24 @@ def emit_event(event: str, payload: Dict[str, Any]) -> None:
 
 
 workflow = ParkingWorkflow(lot, ledger, recognizer=recognizer, gateway=gateway, on_event=emit_event)
+
+
+def _convert_numpy_types(obj: Any) -> Any:
+    """Convert numpy types to native Python types for JSON serialization."""
+    if np is not None:
+        if isinstance(obj, np.bool_):
+            return bool(obj)
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+    if isinstance(obj, dict):
+        return {k: _convert_numpy_types(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_convert_numpy_types(v) for v in obj]
+    return obj
 
 
 def current_user() -> Dict[str, Any] | None:
@@ -176,6 +194,16 @@ def index():
     return render_template(template, username=u["username"], full_name=u.get("full_name", ""), role=role.value)
 
 
+@app.route("/dashboard", methods=["GET"])
+def dashboard_view():
+    """Legacy unified dashboard — accessible by all roles for testing."""
+    guard = require_login()
+    if guard is not None:
+        return guard
+    u = current_user()
+    return render_template("dashboard.html", username=u["username"], full_name=u.get("full_name", ""), role=Role(u["role"]).value)
+
+
 # ─── API: STATUS (all roles) ─────────────────────────────────────────
 @app.route("/api/status")
 def api_status():
@@ -270,7 +298,6 @@ def api_process_frame():
 
     ext = ".jpg"
     filename = f"{uuid.uuid4().hex}{ext}"
-    # Ghi tạm ra file để OCR xử lý, sau đó lưu BLOB vào DB
     tmp_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
 
     if cv2 is not None and np is not None:
@@ -296,10 +323,8 @@ def api_process_frame():
             ann_bytes = f.read()
         ann_filename = os.path.basename(ann_path)
         save_image_to_db(ann_filename, ann_bytes, plate=result.get("plate", ""), is_annotated=1, original_filename=filename)
-        # Xoá file tạm annotated
         os.remove(ann_path)
 
-    # Xoá file tạm gốc
     if os.path.exists(tmp_path):
         os.remove(tmp_path)
 
@@ -308,16 +333,36 @@ def api_process_frame():
     result["plate"] = plate
     result["success"] = True
     result["message"] = result.get("message", "Đã xử lý khung hình") + f" | Ảnh lưu tại {filename}"
-    # annotated_b64 trả về dữ liệu ảnh từ DB
-    ann_result = result.get("annotated_path", "")
-    if ann_result:  # annotated_path đã được set
-        pass  # Giữ nguyên vì OCRResult đã có annotated_b64
-    else:
-        # Nếu có ảnh trong DB, gửi base64
-        data = get_image_from_db(filename)
-        if data:
-            result["image_b64"] = base64.b64encode(data).decode("utf-8")
-    return jsonify(result)
+
+    # Trả về ảnh đã xử lý (annotated) nếu có, nếu không trả về ảnh gốc
+    ann_found = False
+    from core.database import _connect, _execute
+    con = _connect()
+    backend_type = "sqlite"
+    try:
+        backend_type = __import__('os').environ.get('PCS_DB_BACKEND', 'sqlite').strip().lower()
+    except Exception:
+        pass
+    placeholder = "%s" if backend_type == "mysql" else "?"
+    
+    # Tìm ảnh đã xử lý (annotated)
+    cursor = _execute(con, f"SELECT image_data FROM uploaded_images WHERE is_annotated=1 AND original_filename={placeholder} ORDER BY filename DESC LIMIT 1", (filename,))
+    ann_row = cursor.fetchone()
+    if ann_row and ann_row[0]:
+        ann_data = ann_row[0] if isinstance(ann_row[0], bytes) else bytes(ann_row[0])
+        result["annotated_b64"] = base64.b64encode(ann_data).decode("utf-8")
+        ann_found = True
+    
+    # Nếu không có ảnh annotated, trả về ảnh gốc
+    if not ann_found:
+        cursor = _execute(con, f"SELECT image_data FROM uploaded_images WHERE is_annotated=0 AND filename={placeholder}", (filename,))
+        orig_row = cursor.fetchone()
+        if orig_row and orig_row[0]:
+            orig_data = orig_row[0] if isinstance(orig_row[0], bytes) else bytes(orig_row[0])
+            result["image_b64"] = base64.b64encode(orig_data).decode("utf-8")
+    
+    con.close()
+    return jsonify(_convert_numpy_types(result))
 
 
 @app.route("/api/annotated/<filename>")
@@ -328,12 +373,10 @@ def api_annotated_image(filename: str):
         return jsonify({"error": "unauthorized"}), 401
     from flask import send_file
     import io
-    # Thử lấy từ DB trước
     data = get_image_from_db(filename)
     if data:
         mimetype = 'image/png' if filename.lower().endswith('.png') else 'image/jpeg'
         return send_file(io.BytesIO(data), mimetype=mimetype)
-    # Fallback: thử file system
     image_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     if os.path.exists(image_path):
         return send_file(image_path, mimetype='image/jpeg')
@@ -352,15 +395,12 @@ def api_process_image():
     image_file = request.files["image"]
     ext = os.path.splitext(image_file.filename)[1] or ".jpg"
     filename = f"{uuid.uuid4().hex}{ext}"
-    # Ghi tạm ra file để OCR xử lý
     tmp_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     image_file.save(tmp_path)
 
-    # Đọc bytes ảnh gốc (trước OCR, để lưu BLOB gốc)
     with open(tmp_path, "rb") as f:
         orig_bytes = f.read()
 
-    # Lưu ảnh gốc vào DB ngay trước khi OCR (để không mất nếu OCR crash)
     save_image_to_db(filename, orig_bytes, plate="", is_annotated=0, original_filename=image_file.filename)
 
     result = recognizer.analyze_image_file(tmp_path)
@@ -394,11 +434,37 @@ def api_process_image():
             _execute(con, "UPDATE uploaded_images SET plate=? WHERE filename=?", (plate, filename))
         con.close()
 
-    # Xoá file tạm
+    # Trả về ảnh đã xử lý (annotated) nếu có, nếu không thì trả về ảnh gốc
+    from core.database import _connect, _execute
+    con = _connect()
+    backend_type = "sqlite"
+    try:
+        backend_type = __import__('os').environ.get('PCS_DB_BACKEND', 'sqlite').strip().lower()
+    except Exception:
+        pass
+    placeholder = "%s" if backend_type == "mysql" else "?"
+    cursor = _execute(con, f"SELECT filename, image_data FROM uploaded_images WHERE is_annotated=1 AND original_filename={placeholder} ORDER BY filename DESC LIMIT 1", (filename,))
+    ann_row = cursor.fetchone()
+    
+    if ann_row:
+        ann_filename, ann_data = ann_row
+        if ann_data:
+            result["annotated_b64"] = base64.b64encode(ann_data).decode("utf-8")
+            result["annotated_filename"] = ann_filename
+        con.close()
+    else:
+        # Fallback: trả về ảnh gốc đã upload
+        cursor = _execute(con, f"SELECT image_data FROM uploaded_images WHERE is_annotated=0 AND filename={placeholder}", (filename,))
+        orig_row = cursor.fetchone()
+        con.close()
+        if orig_row and orig_row[0]:
+            orig_data = orig_row[0] if isinstance(orig_row[0], bytes) else bytes(orig_row[0])
+            result["image_b64"] = base64.b64encode(orig_data).decode("utf-8")
+
     if os.path.exists(tmp_path):
         os.remove(tmp_path)
 
-    return jsonify(result)
+    return jsonify(_convert_numpy_types(result))
 
 
 @app.route("/api/image_history/<plate>")
@@ -417,13 +483,104 @@ def api_recent_history():
     return jsonify(get_recent_image_history())
 
 
+# ─── API: SUGGEST SLOT (auto assignment) ────────────────────────────
+@app.route("/api/suggest_slot", methods=["POST"])
+def api_suggest_slot():
+    """
+    Nhận plate + vehicle_type → kiểm tra xe chưa vào → tìm chỗ trống
+    → trả về thông tin slot được gợi ý + thông báo.
+    Dùng cho chức năng auto-slot-sau-OCR.
+    """
+    guard = require_permission("checkin")
+    if guard is not None:
+        return guard
+    payload = request.get_json(silent=True) or {}
+    plate = (payload.get("plate") or "").strip().upper()
+    vehicle_type = payload.get("vehicle_type") or "car"
+    
+    if not plate:
+        return jsonify({"success": False, "message": "Thiếu biển số xe"}), 400
+
+    # Only 2 types: car or motorbike
+    if vehicle_type == "motorbike":
+        vehicle_type_enum = VehicleType.MOTORBIKE
+    else:
+        vehicle_type_enum = VehicleType.CAR
+
+    # Check if already parked
+    existing_slot = lot.find_by_plate(plate)
+    if existing_slot:
+        return jsonify({
+            "success": False,
+            "plate": plate,
+            "vehicle_type": vehicle_type_enum.value,
+            "has_slot": True,
+            "suggested_slot": {
+                "slot_id": existing_slot.slot_id,
+                "zone": existing_slot.zone.value,
+                "zone_label": "Zone A" if existing_slot.zone.value == "A" else "Zone B",
+            },
+            "message": f"⚠️ Xe {plate} đã đỗ tại {existing_slot.slot_id}"
+        })
+
+    # Find available slot
+    slot_info = lot.suggest_slot_with_info(vehicle_type_enum)
+    if not slot_info:
+        zone = vehicle_type_enum.display_name
+        return jsonify({
+            "success": False,
+            "plate": plate,
+            "vehicle_type": vehicle_type_enum.value,
+            "has_slot": False,
+            "suggested_slot": None,
+            "message": f"❌ Bãi đỗ đầy ({zone})"
+        })
+
+    return jsonify({
+        "success": True,
+        "plate": plate,
+        "vehicle_type": vehicle_type_enum.value,
+        "vehicle_label": vehicle_type_enum.display_name,
+        "has_slot": True,
+        "suggested_slot": slot_info,
+        "message": f"✅ {vehicle_type_enum.display_name} {plate} → {slot_info['zone_label']} · {slot_info['slot_id']}"
+    })
+
+
+@app.route("/api/auto_entry", methods=["POST"])
+def api_auto_entry():
+    """
+    Tự động: Detect → Tìm chỗ → Nhận xe vào → Thông báo
+    Chỉ cần plate + vehicle_type. Tự động chọn slot trống.
+    """
+    guard = require_permission("checkin")
+    if guard is not None:
+        return guard
+    payload = request.get_json(silent=True) or {}
+    plate = (payload.get("plate") or "").strip().upper()
+    vehicle_type = payload.get("vehicle_type") or "car"
+    
+    if not plate:
+        return jsonify({"success": False, "message": "Thiếu biển số xe"}), 400
+
+    if vehicle_type == "motorbike":
+        vehicle_type_enum = VehicleType.MOTORBIKE
+    else:
+        vehicle_type_enum = VehicleType.CAR
+
+    ok, message, txn = workflow.process_entry(image_path="", manual_plate=plate, vehicle_type=vehicle_type_enum)
+    if ok and txn:
+        app.config["LAST_PLATE"] = txn.plate
+    return jsonify({"success": ok, "message": message, "tx": txn.to_dict() if txn else None})
+
+
 # ─── API: ENTRY / EXIT ───────────────────────────────────────────────
 @app.route("/api/simulate_entry", methods=["POST"])
 def api_simulate_entry():
     guard = require_permission("checkin")
     if guard is not None:
         return guard
-    ok, message, txn = workflow.process_entry(image_path="", vehicle_type=VehicleType.CAR_UNDER_7)
+    ok, message, txn = workflow.process_entry(image_path="")
     if ok and txn:
         app.config["LAST_PLATE"] = txn.plate
     return jsonify({"success": ok, "message": message})
@@ -446,8 +603,12 @@ def api_entry():
         return guard
     payload = request.get_json(silent=True) or {}
     plate = (payload.get("plate") or "").strip().upper()
-    vehicle_type = payload.get("vehicle_type") or "car_under_7"
-    vehicle_type_enum = VehicleType(vehicle_type) if vehicle_type in {x.value for x in VehicleType} else VehicleType.CAR_UNDER_7
+    vehicle_type = payload.get("vehicle_type") or "car"
+    # Only 2 types: car or motorbike
+    if vehicle_type == "motorbike":
+        vehicle_type_enum = VehicleType.MOTORBIKE
+    else:
+        vehicle_type_enum = VehicleType.CAR
     ok, message, txn = workflow.process_entry(image_path="", manual_plate=plate, vehicle_type=vehicle_type_enum)
     if ok and txn:
         app.config["LAST_PLATE"] = txn.plate
@@ -472,21 +633,18 @@ def api_exit():
 # ─── API: OWNER ──────────────────────────────────────────────────────
 @app.route("/api/my_vehicles")
 def api_my_vehicles():
-    """Chủ xe: danh sách xe của mình"""
     guard = require_permission("view_own_history")
     if guard is not None:
         return guard
     u = current_user()
-    # Trong demo: trả về xe mẫu theo username
     sample_plates = {"staff1": "51A-12345", "owner": "51L-77777"}
     plate = sample_plates.get(u["username"], "51A-12345")
     vehicle = get_vehicle(plate)
-    return jsonify(vehicle or {"plate": plate, "vehicle_type": "car_under_7", "owner_name": u.get("full_name", "")})
+    return jsonify(vehicle or {"plate": plate, "vehicle_type": "car", "owner_name": u.get("full_name", "")})
 
 
 @app.route("/api/my_transactions")
 def api_my_transactions():
-    """Chủ xe: lịch sử giao dịch"""
     guard = require_permission("view_own_history")
     if guard is not None:
         return guard
@@ -494,14 +652,12 @@ def api_my_transactions():
     sample_plates = {"staff1": "51A-12345", "owner": "51L-77777"}
     plate = sample_plates.get(u["username"], "51A-12345")
     txns = query_transactions()
-    # Lọc theo plate
     my_txns = [t for t in txns if t.get("plate") == plate][:20]
     return jsonify(my_txns)
 
 
 @app.route("/api/my_payment", methods=["POST"])
 def api_my_payment():
-    """Chủ xe: thanh toán trực tuyến"""
     guard = require_permission("view_own_history")
     if guard is not None:
         return guard
@@ -550,8 +706,6 @@ def api_admin_set_rate():
         lot.set_rate(Zone.A, rate)
     elif zone == "B":
         lot.set_rate(Zone.B, rate)
-    elif zone == "C":
-        lot.set_rate(Zone.C, rate)
     return jsonify({"success": True, "message": "Đã cập nhật giá"})
 
 

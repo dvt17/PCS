@@ -13,7 +13,6 @@
   --text:#EAEAEA;--muted:#8B8FA8;--purple:#9B59B6;
   --zone-a-bg:#1A2E1A;--zone-a-border:#2ECC7166;--zone-a-head:#27AE60;
   --zone-b-bg:#1A1A2E;--zone-b-border:#4F8EF766;--zone-b-head:#4F8EF7;
-  --zone-c-bg:#2E1A1A;--zone-c-border:#E74C3C66;--zone-c-head:#E74C3C;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
@@ -28,48 +27,39 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .user-info{font-size:12px;color:var(--muted)}
 .btn-logout{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px}
 .btn-logout:hover{border-color:var(--danger);color:var(--danger)}
-
 .tabs{display:flex;gap:2px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border)}
 .tab{padding:10px 18px;background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-
 .main{display:flex;flex:1;overflow:hidden}
 .content{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
 .sidebar{width:290px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;padding:14px;gap:12px;overflow-y:auto;flex-shrink:0}
-
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .metric{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
 .metric-label{font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
 .metric-val{font-size:24px;font-weight:700;color:var(--text);line-height:1}
 .metric-sub{font-size:11px;color:var(--muted);margin-top:4px}
-
 .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
 .card-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .panel{display:none}
 .panel.active{display:contents}
-
-/* Zone groups */
+/* Zone groups — only A and B */
 .zone-group{border-radius:10px;padding:12px 14px 14px;margin-bottom:10px;border:1px solid;position:relative;overflow:hidden}
 .zone-group::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .zone-group-a{background:var(--zone-a-bg);border-color:var(--zone-a-border)}
 .zone-group-a::before{background:var(--zone-a-head)}
 .zone-group-b{background:var(--zone-b-bg);border-color:var(--zone-b-border)}
 .zone-group-b::before{background:var(--zone-b-head)}
-.zone-group-c{background:var(--zone-c-bg);border-color:var(--zone-c-border)}
-.zone-group-c::before{background:var(--zone-c-head)}
 .zone-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.06)}
 .zone-title{display:flex;align-items:center;gap:8px}
 .zone-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-weight:800;font-size:13px;color:#fff}
 .zone-badge-a{background:var(--zone-a-head)}
 .zone-badge-b{background:var(--zone-b-head)}
-.zone-badge-c{background:var(--zone-c-head)}
 .zone-name{font-size:14px;font-weight:700;color:var(--text)}
 .zone-desc{font-size:11px;color:var(--muted)}
 .zone-stats{font-size:11px;color:var(--muted);text-align:right}
 .zone-stats strong{color:var(--text)}
 .zone-grid{display:grid;gap:4px}
-
 .slot{border-radius:6px;padding:5px 3px 4px;text-align:center;cursor:pointer;transition:transform .15s,opacity .15s;border:1px solid transparent;position:relative}
 .slot:hover{transform:scale(1.06);z-index:2}
 .slot.empty{background:#163D22;border-color:#27AE60;color:#2ECC71}
@@ -80,11 +70,9 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 @keyframes pulse{from{opacity:1}to{opacity:.4}}
 .slot-id{font-size:10px;font-weight:700}
 .slot-plate{font-size:8px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-
 .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
 .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
 .leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
-
 .cam-box{background:var(--surface);border-radius:8px;padding:12px;border:1px solid var(--border)}
 .cam-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)}
 .cam-row:last-child{border-bottom:none}
@@ -94,7 +82,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .cam-stage{position:relative;margin-top:10px;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#000;min-height:220px}
 .cam-stage video,.cam-stage canvas{width:100%;height:220px;object-fit:cover;display:block}
 .cam-stage canvas{position:absolute;inset:0;pointer-events:none}
-
 .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .btn{padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
 .btn:hover{opacity:.85;transform:translateY(-1px)}
@@ -105,7 +92,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .btn-warn{background:var(--warn);border-color:var(--warn);color:#fff}
 .btn-purple{background:var(--purple);border-color:var(--purple);color:#fff}
 .btn-sm{padding:5px 10px;font-size:11px}
-
 .history-table-wrap{margin-top:10px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface)}
 .history-table{width:100%;border-collapse:collapse;font-size:12px}
 .history-table th,.history-table td{padding:10px 10px;border-bottom:1px solid var(--border);text-align:left}
@@ -114,7 +100,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .badge{display:inline-block;padding:2px 6px;border-radius:999px;font-size:10px;font-weight:600;text-transform:uppercase;margin-left:4px}
 .badge.valid{background:rgba(46,204,113,.15);color:var(--success)}
 .badge.warn{background:rgba(243,156,18,.15);color:var(--warn)}
-
 .feed{display:flex;flex-direction:column;gap:5px;max-height:260px;overflow-y:auto}
 .feed-item{background:var(--bg);border-radius:7px;padding:7px 10px;display:flex;gap:8px;align-items:flex-start}
 .feed-icon{font-size:14px;flex-shrink:0;margin-top:1px}
@@ -122,12 +107,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .feed-plate{font-weight:600;font-size:12px;color:var(--text)}
 .feed-detail{font-size:11px;color:var(--muted);margin-top:1px}
 .feed-time{font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0}
-
 .zone-row{margin-bottom:10px}
 .zone-header{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
 .zone-track{height:8px;background:var(--surface);border-radius:4px;overflow:hidden}
 .zone-fill{height:100%;border-radius:4px;transition:width .5s ease}
-
 .modal-overlay{position:fixed;inset:0;background:#00000088;display:flex;align-items:center;justify-content:center;z-index:1000;display:none}
 .modal-overlay.open{display:flex}
 .modal{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;width:400px;max-width:90vw}
@@ -136,8 +119,16 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .modal input,.modal select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;outline:none}
 .modal input:focus,.modal select:focus{border-color:var(--accent)}
 .modal-btns{display:flex;gap:8px;margin-top:18px;justify-content:flex-end}
+/* Auto-slot suggestion notification */
+.auto-slot-card{background:#1A2E1A;border:2px solid #2ECC71;border-radius:12px;padding:14px 16px;margin-top:10px;display:none;animation:fadeIn .3s ease}
+.auto-slot-card.show{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.auto-slot-card.error{border-color:#E74C3C;background:#2D1A1A}
+.auto-slot-icon{font-size:28px;display:block;text-align:center;margin-bottom:4px}
+.auto-slot-title{font-size:15px;font-weight:700;text-align:center;margin-bottom:4px}
+.auto-slot-detail{font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px}
+.auto-slot-btn{display:flex;gap:8px;justify-content:center}
 .receipt{background:var(--surface);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;white-space:pre;color:var(--text);margin-top:10px;max-height:240px;overflow-y:auto}
-
 .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .bar-row{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px}
 .bar-label{width:28px;text-align:right;color:var(--muted)}
@@ -148,14 +139,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .rate-label{width:160px;font-size:13px;color:var(--text)}
 .rate-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 10px;color:var(--text);font-size:13px;outline:none}
 .rate-input:focus{border-color:var(--accent)}
-
 .toast{position:fixed;bottom:24px;right:24px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid;z-index:9999;animation:slideUp .3s ease;pointer-events:none}
 @keyframes slideUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
 .toast-success{background:#163D22;color:var(--success);border-color:#27AE6066}
 .toast-error{background:#3D1616;color:var(--danger);border-color:#C0392B66}
 .toast-info{background:#162040;color:var(--accent);border-color:#4F8EF766}
 .toast-warn{background:#3D2E10;color:var(--warn);border-color:#D6891066}
-
 .sim-row{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:8px;padding:10px 12px;border:1px solid var(--border)}
 .sim-label{font-size:11px;color:var(--muted);flex-shrink:0}
 input[type=range]{flex:1;accent-color:var(--accent)}
@@ -166,7 +155,6 @@ input[type=range]{flex:1;accent-color:var(--accent)}
 </style>
 </head>
 <body>
-
 <div class="header">
   <div class="logo"><span class="logo-icon">🅿</span><span>PCS Smart Parking</span></div>
   <div class="tabs" style="background:transparent;border:none;padding:0">
@@ -183,16 +171,14 @@ input[type=range]{flex:1;accent-color:var(--accent)}
     <a href="/logout"><button class="btn-logout"><i class="fa fa-right-from-bracket"></i> Đăng xuất</button></a>
   </div>
 </div>
-
 <div class="main">
   <div class="content">
     <div class="metrics">
-      <div class="metric"><div class="metric-label"><i class="fa fa-parking"></i> Tổng ô đỗ</div><div class="metric-val" id="m-total">—</div><div class="metric-sub">A · B · C</div></div>
+      <div class="metric"><div class="metric-label"><i class="fa fa-parking"></i> Tổng ô đỗ</div><div class="metric-val" id="m-total">—</div><div class="metric-sub">A · B</div></div>
       <div class="metric"><div class="metric-label"><i class="fa fa-car"></i> Đang đỗ</div><div class="metric-val" id="m-occ">—</div><div class="metric-sub" id="m-occ-pct">— % lấp đầy</div></div>
       <div class="metric"><div class="metric-label"><i class="fa fa-square-check"></i> Còn trống</div><div class="metric-val" id="m-avail">—</div><div class="metric-sub">ô trống</div></div>
       <div class="metric"><div class="metric-label"><i class="fa fa-money-bill-wave"></i> Doanh thu hôm nay</div><div class="metric-val" id="m-rev">—</div><div class="metric-sub" id="m-txn">— giao dịch</div></div>
     </div>
-
     <!-- Dashboard tab -->
     <div id="tab-dashboard" class="panel active" style="display:flex;flex-direction:column;gap:12px">
       <div class="card">
@@ -215,7 +201,7 @@ input[type=range]{flex:1;accent-color:var(--accent)}
             <div class="cam-row"><span class="cam-key">Loại xe</span><span class="cam-val" id="cam-type">—</span></div>
             <div class="cam-row"><span class="cam-key">Trạng thái</span><span class="cam-val" id="cam-status">—</span></div>
           </div>
-          <div class="cam-stage"><video id="video-feed" autoplay playsinline muted></video><canvas id="overlay-canvas"></canvas></div>
+          <div class="cam-stage"><video id="video-feed" autoplay playsinline muted></video><canvas id="overlay-canvas"></canvas><img id="cam-preview-img" style="width:100%;height:100%;object-fit:contain;display:none;position:absolute;top:0;left:0;z-index:5;" alt="Preview image"></div>
           <div class="btn-row">
             <button class="btn btn-primary btn-sm" onclick="triggerOCR()"><i class="fa fa-camera"></i> Chụp & nhận diện</button>
             <button class="btn btn-sm" onclick="toggleCamera()"><i class="fa fa-video"></i> Bật/Tắt Camera</button>
@@ -224,6 +210,27 @@ input[type=range]{flex:1;accent-color:var(--accent)}
             <button class="btn btn-sm" onclick="document.getElementById('image-file').click()"><i class="fa fa-image"></i> Tải ảnh</button>
           </div>
           <input id="image-file" type="file" accept="image/*" style="display:none" onchange="uploadAndReadImage()">
+          <!-- Result preview after upload/image processing -->
+          <div class="result-preview" id="result-preview" style="display:none;margin-top:8px">
+            <div class="card-title" style="margin-bottom:6px"><i class="fa fa-image"></i> Ảnh đã xử lý — khung từng ký tự</div>
+            <div style="position:relative;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#000;text-align:center">
+              <img id="annotated-img" style="max-width:100%;max-height:300px;display:block;margin:0 auto" alt="Ảnh đã xử lý">
+            </div>
+            <div class="cam-box" style="margin-top:6px">
+              <div class="cam-row"><span class="cam-key">Ký tự phát hiện</span><span class="cam-val" id="cam-chars" style="font-size:16px">—</span></div>
+              <div class="cam-row" style="border-bottom:none"><span class="cam-key">Số ký tự</span><span class="cam-val" id="cam-char-count">0</span></div>
+            </div>
+          </div>
+          <!-- Auto-slot suggestion after OCR -->
+          <div class="auto-slot-card" id="auto-slot-card">
+            <div class="auto-slot-icon" id="auto-slot-icon">🚗</div>
+            <div class="auto-slot-title" id="auto-slot-title">Đã tìm thấy chỗ đỗ</div>
+            <div class="auto-slot-detail" id="auto-slot-detail">—</div>
+            <div class="auto-slot-btn">
+              <button class="btn btn-success btn-sm" onclick="confirmAutoEntry()" id="auto-confirm-btn"><i class="fa fa-check"></i> Xác nhận xe vào</button>
+              <button class="btn btn-sm" onclick="hideAutoSlot()">Huỷ</button>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-title"><i class="fa fa-receipt"></i> Giao dịch gần nhất</div>
@@ -238,7 +245,6 @@ input[type=range]{flex:1;accent-color:var(--accent)}
         </div>
       </div>
     </div>
-
     <!-- Lot tab -->
     <div id="tab-lot" class="panel" style="display:none;flex-direction:column;gap:12px">
       <div class="card">
@@ -253,12 +259,11 @@ input[type=range]{flex:1;accent-color:var(--accent)}
         </div>
       </div>
     </div>
-
     <!-- Camera tab -->
     <div id="tab-camera" class="panel" style="display:none;flex-direction:column;gap:12px">
       <div class="card">
         <div class="card-title"><i class="fa fa-camera"></i> Camera & OCR chi tiết</div>
-        <div class="cam-stage" style="min-height:360px"><video id="video-feed-2" autoplay playsinline muted></video><canvas id="overlay-canvas-2"></canvas></div>
+        <div class="cam-stage" style="min-height:360px"><video id="video-feed-2" autoplay playsinline muted></video><canvas id="overlay-canvas-2"></canvas><img id="cam2-preview-img" style="width:100%;height:100%;object-fit:contain;display:none;position:absolute;top:0;left:0;z-index:5;" alt="Preview image"></div>
         <div class="btn-row">
           <button class="btn btn-primary" onclick="triggerOCR2()"><i class="fa fa-camera"></i> Chụp & nhận diện</button>
           <button class="btn" onclick="toggleCamera2()"><i class="fa fa-video"></i> Bật/Tắt Camera</button>
@@ -276,7 +281,6 @@ input[type=range]{flex:1;accent-color:var(--accent)}
         </div>
       </div>
     </div>
-
     <!-- Report tab -->
     <div id="tab-report" class="panel" style="display:none;flex-direction:column;gap:12px">
       <div class="card">
@@ -301,15 +305,13 @@ input[type=range]{flex:1;accent-color:var(--accent)}
         </div>
       </div>
     </div>
-
     <!-- Admin tab -->
     <div id="tab-admin" class="panel" style="display:none;flex-direction:column;gap:12px">
       <div class="admin-grid">
         <div class="card">
           <div class="card-title"><i class="fa fa-coins"></i> Cấu hình giá đỗ</div>
-          <div class="rate-row"><span class="rate-label">Zone A (Ô tô < 7 chỗ)</span><input class="rate-input" id="rate-a" type="number" value="15000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
-          <div class="rate-row"><span class="rate-label">Zone B (Xe máy)</span><input class="rate-input" id="rate-b" type="number" value="8000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
-          <div class="rate-row"><span class="rate-label">Zone C (Xe 7-16 chỗ)</span><input class="rate-input" id="rate-c" type="number" value="25000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
+          <div class="rate-row"><span class="rate-label">Zone A (🚗 Ô tô)</span><input class="rate-input" id="rate-a" type="number" value="15000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
+          <div class="rate-row"><span class="rate-label">Zone B (🏍️ Xe máy)</span><input class="rate-input" id="rate-b" type="number" value="5000"> <span style="font-size:11px;color:var(--muted)">đ/giờ</span></div>
           <div class="btn-row" style="margin-top:12px"><button class="btn btn-success btn-sm" onclick="saveRates()"><i class="fa fa-save"></i> Lưu giá</button></div>
         </div>
         <div class="card">
@@ -325,7 +327,6 @@ input[type=range]{flex:1;accent-color:var(--accent)}
       </div>
     </div>
   </div>
-
   <div class="sidebar">
     <div class="card">
       <div class="card-title"><i class="fa fa-gamepad"></i> Mô phỏng</div>
@@ -350,7 +351,6 @@ input[type=range]{flex:1;accent-color:var(--accent)}
     </div>
   </div>
 </div>
-
 <!-- Modals -->
 <div class="modal-overlay" id="entry-modal">
   <div class="modal">
@@ -360,7 +360,6 @@ input[type=range]{flex:1;accent-color:var(--accent)}
     <select id="e-type">
       <option value="car">🚗 Ô tô — Zone A</option>
       <option value="motorbike">🏍 Xe máy — Zone B</option>
-      <option value="truck">🚛 Xe 7-16 chỗ — Zone C</option>
     </select>
     <div class="modal-btns"><button class="btn btn-sm" onclick="closeModal('entry-modal')">Huỷ</button><button class="btn btn-success btn-sm" onclick="doEntry()"><i class="fa fa-check"></i> Xác nhận vào</button></div>
   </div>
@@ -381,18 +380,15 @@ input[type=range]{flex:1;accent-color:var(--accent)}
   </div>
 </div>
 <div id="toast" style="display:none"></div>
-
 <script>
 const ZONE_CONFIG = {
-  A: {label:'Zone A',description:'🚗 Ô tô dưới 7 chỗ',color:'var(--zone-a-head)',bgClass:'zone-group-a',badgeClass:'zone-badge-a',gridClass:'zone-grid-a',cols:5},
-  B: {label:'Zone B',description:'🏍 Xe máy',color:'var(--zone-b-head)',bgClass:'zone-group-b',badgeClass:'zone-badge-b',gridClass:'zone-grid-b',cols:4},
-  C: {label:'Zone C',description:'🚛 Ô tô 7-16 chỗ',color:'var(--zone-c-head)',bgClass:'zone-group-c',badgeClass:'zone-badge-c',gridClass:'zone-grid-c',cols:4}
+  A: {label:'Zone A',description:'🚗 Ô tô',color:'var(--zone-a-head)',bgClass:'zone-group-a',badgeClass:'zone-badge-a',cols:5},
+  B: {label:'Zone B',description:'🏍️ Xe máy',color:'var(--zone-b-head)',bgClass:'zone-group-b',badgeClass:'zone-badge-b',cols:4}
 };
 let autoRunning=false, autoTimer=null, simSpeed=3, occChart=null, currentStream=null, currentStream2=null;
-
+let lastOcrPlate='', lastOcrType='car', pendingSlotInfo=null;
 function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleDateString('vi-VN')+'  '+n.toLocaleTimeString('vi-VN')}
 setInterval(updateClock,1000);updateClock();
-
 function switchTab(name,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   ['dashboard','lot','camera','report','admin'].forEach(t=>{const e=document.getElementById('tab-'+t);if(e)e.style.display='none'});
@@ -400,25 +396,22 @@ function switchTab(name,btn){
   const p=document.getElementById('tab-'+name);if(p)p.style.display='flex';
   if(name==='report')loadReport('today');
 }
-
 async function api(url,method='GET',body=null){
   const opts={method,headers:{'Content-Type':'application/json'}};
   if(body)opts.body=JSON.stringify(body);
   return(await fetch(url,opts)).json();
 }
-
 function renderSlotsByZone(cid,slots,compact){
   const el=document.getElementById(cid);if(!el)return;
-  const g={A:[],B:[],C:[]};slots.forEach(s=>{if(g[s.zone])g[s.zone].push(s)});
-  el.innerHTML=['A','B','C'].map(k=>{
+  const g={A:[],B:[]};slots.forEach(s=>{if(g[s.zone])g[s.zone].push(s)});
+  el.innerHTML=['A','B'].map(k=>{
     const c=ZONE_CONFIG[k],zs=g[k]||[];if(!zs.length)return'';
     const total=zs.length,occ=zs.filter(s=>s.state==='occupied'||s.state==='entering'||s.state==='exiting').length,pct=total?Math.round(occ/total*100):0;
     const sh=zs.map(s=>{const p=s.plate?`<div class="slot-plate">${s.plate.length>6?s.plate.slice(-6):s.plate}</div>`:'';return`<div class="slot ${s.state}" title="[${s.id}] ${s.state.toUpperCase()}${s.plate?' · '+s.plate:''}" onclick="showToast('${s.id} — ${s.state}','info')"><div class="slot-id">${s.id}</div>${p}</div>`}).join('');
     const cols=compact?Math.min(c.cols,4):c.cols;
-    return`<div class="zone-group ${c.bgClass}"><div class="zone-header"><div class="zone-title"><span class="zone-badge ${c.badgeClass}">${k}</span><div><div class="zone-name">${c.label}</div><div class="zone-desc">${c.description}</div></div></div><div class="zone-stats"><strong>${occ}</strong>/${total} · <strong>${pct}%</strong></div></div><div class="zone-grid ${c.gridClass}" style="grid-template-columns:repeat(${cols},1fr)">${sh}</div></div>`;
+    return`<div class="zone-group ${c.bgClass}"><div class="zone-header"><div class="zone-title"><span class="zone-badge ${c.badgeClass}">${k}</span><div><div class="zone-name">${c.label}</div><div class="zone-desc">${c.description}</div></div></div><div class="zone-stats"><strong>${occ}</strong>/${total} · <strong>${pct}%</strong></div></div><div class="zone-grid" style="grid-template-columns:repeat(${cols},1fr)">${sh}</div></div>`;
   }).join('');
 }
-
 async function refreshStatus(){
   const[s,sl]=await Promise.all([api('/api/status'),api('/api/slots')]);
   document.getElementById('m-total').textContent=s.total;
@@ -434,33 +427,77 @@ async function refreshStatus(){
   const t=await api('/api/last_transaction');
   if(t&&t.plate){setEl('t-plate',t.plate);setEl('t-slot',t.slot_id);setEl('t-time',t.entry+' → '+t.exit);setEl('t-dur',t.hours+' giờ');setEl('t-method',t.method);setEl('t-fee',t.fee+'đ')}
 }
-
 function setEl(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
 function fmtMoney(n){return Number(n).toLocaleString('vi-VN')+'đ'}
-
 function renderZoneOcc(zones){
   const el=document.getElementById('zone-occ');if(!el)return;
-  const n={A:'Zone A · Ô tô',B:'Zone B · Xe máy',C:'Zone C · 7-16'},c={A:'#27AE60',B:'#4F8EF7',C:'#F39C12'};
+  const n={A:'Zone A · 🚗 Ô tô',B:'Zone B · 🏍️ Xe máy'},c={A:'#27AE60',B:'#4F8EF7'};
   el.innerHTML=Object.entries(zones).map(([z,info])=>{
     const pct=info.total?Math.round(info.occupied/info.total*100):0;
     const col=pct>80?'#E74C3C':pct>50?'#F39C12':c[z];
     return`<div class="zone-row"><div class="zone-header"><span>${n[z]}</span><span>${info.occupied}/${info.total}</span></div><div class="zone-track"><div class="zone-fill" style="width:${pct}%;background:${col}"></div></div></div>`;
   }).join('');
 }
-
 const iconMap={vehicle_entered:{icon:'fa-right-to-bracket',color:'#2ECC71'},vehicle_exited:{icon:'fa-right-from-bracket',color:'#E74C3C'},ocr_failed:{icon:'fa-triangle-exclamation',color:'#F39C12'},lot_full:{icon:'fa-ban',color:'#E74C3C'}};
 function renderFeed(items){
   const el=document.getElementById('feed');if(!el||!items.length)return;
   el.innerHTML=items.map(f=>{
     const ic=iconMap[f.event]||{icon:'fa-circle-info',color:'#4F8EF7'};
     let d='';const p=f.payload;
-    if(f.event==='vehicle_entered')d=`→ ${p.slot_id} · Zone ${p.zone}`;
+    if(f.event==='vehicle_entered')d=`→ ${p.slot_id} · Zone ${p.zone} · ${p.vehicle_label||''}`;
     else if(f.event==='vehicle_exited')d=`← ${p.slot_id} · ${fmtMoney(p.fee)} · ${p.method}`;
     else d=p.message||'';
     return`<div class="feed-item"><i class="fa ${ic.icon} feed-icon" style="color:${ic.color}"></i><div class="feed-body"><div class="feed-plate">${p.plate||'Hệ thống'}</div><div class="feed-detail">${d}</div></div><span class="feed-time">${f.time}</span></div>`;
   }).join('');
 }
-
+async function suggestSlotAfterOCR(plate, vehicle_type){
+  if(!plate)return;
+  const result=await api('/api/suggest_slot','POST',{plate,vehicle_type});
+  const card=document.getElementById('auto-slot-card');
+  const icon=document.getElementById('auto-slot-icon');
+  const title=document.getElementById('auto-slot-title');
+  const detail=document.getElementById('auto-slot-detail');
+  const confirmBtn=document.getElementById('auto-confirm-btn');
+  if(result.success && result.has_slot && result.suggested_slot){
+    pendingSlotInfo={plate,vehicle_type,slot_info:result.suggested_slot};
+    icon.textContent=vehicle_type==='motorbike'?'🏍':'🚗';
+    title.textContent='✅ Đã tìm thấy chỗ đỗ trống!';
+    detail.textContent=`🔹 ${result.vehicle_label} ${plate} → ${result.suggested_slot.zone_label} · ${result.suggested_slot.slot_id}  |  Giá: ${fmtMoney(result.suggested_slot.hourly_rate)}/giờ`;
+    card.className='auto-slot-card show';
+    confirmBtn.disabled=false;
+    confirmBtn.innerHTML='<i class="fa fa-check"></i> Xác nhận xe vào';
+  } else if(result.success===false && result.has_slot && result.suggested_slot){
+    // Already parked
+    icon.textContent='⚠️';
+    title.textContent='Xe đã đỗ trong bãi';
+    detail.textContent=result.message;
+    card.className='auto-slot-card show error';
+    confirmBtn.disabled=true;
+    confirmBtn.innerHTML='Đã đỗ';
+  } else {
+    // Lot full
+    icon.textContent='❌';
+    title.textContent='Bãi đỗ đầy!';
+    detail.textContent=result.message||'Không còn chỗ trống cho loại xe này';
+    card.className='auto-slot-card show error';
+    confirmBtn.disabled=true;
+    confirmBtn.innerHTML='Hết chỗ';
+  }
+}
+function hideAutoSlot(){
+  document.getElementById('auto-slot-card').className='auto-slot-card';
+  pendingSlotInfo=null;
+}
+async function confirmAutoEntry(){
+  if(!pendingSlotInfo){showToast('Không có thông tin xe để xác nhận','warn');return}
+  const {plate,vehicle_type}=pendingSlotInfo;
+  const r=await api('/api/auto_entry','POST',{plate,vehicle_type});
+  showToast(r.message,r.success?'success':'error');
+  if(r.success){
+    hideAutoSlot();
+    refreshStatus();
+  }
+}
 async function triggerOCR(){await _captureOCR('video-feed','overlay-canvas')}
 async function triggerOCR2(){await _captureOCR('video-feed-2','overlay-canvas-2')}
 async function _captureOCR(vidId,canId){
@@ -478,13 +515,29 @@ async function _captureOCR(vidId,canId){
   document.getElementById('cam2-plate').textContent=data.plate||'—';
   document.getElementById('cam2-conf').textContent=data.confidence??'—';
   document.getElementById('cam2-type').textContent=data.vehicle_type||'unknown';
+  
+  // Hiển thị ảnh annotated
+  const isMain = vidId === 'video-feed';
+  const pimg = document.getElementById(isMain ? 'cam-preview-img' : 'cam2-preview-img');
+  if(pimg && data.annotated_b64){
+    pimg.src = 'data:image/jpeg;base64,' + data.annotated_b64;
+    pimg.style.display = 'block';
+  }
+  
   await loadRecognitionHistory(data.plate);
+  // Auto suggest slot after successful OCR
+  if(data.valid && data.plate){
+    lastOcrPlate=data.plate;
+    lastOcrType=data.vehicle_type||'car';
+    await suggestSlotAfterOCR(data.plate, lastOcrType);
+  }
 }
-
 async function toggleCamera(){await _toggle('video-feed','cam-status',true)}
 async function toggleCamera2(){await _toggle('video-feed-2','cam2-status',false)}
 async function _toggle(vidId,statusId,isMain){
   const v=document.getElementById(vidId),st=document.getElementById(statusId);
+  const pimg=document.getElementById(isMain?'cam-preview-img':'cam2-preview-img');
+  if(pimg)pimg.style.display='none';
   if((isMain&&currentStream)||(!isMain&&currentStream2)){
     const s=isMain?currentStream:currentStream2;
     s.getTracks().forEach(t=>t.stop());
@@ -493,9 +546,7 @@ async function _toggle(vidId,statusId,isMain){
     if(st){st.textContent='Đã tắt';st.style.color='var(--muted)'}
     showToast('Camera đã tắt','info');return;
   }
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-    showToast('Trình duyệt không hỗ trợ camera','error');return
-  }
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showToast('Trình duyệt không hỗ trợ camera','error');return}
   try{
     const s=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
     if(isMain)currentStream=s;else currentStream2=s;
@@ -507,7 +558,6 @@ async function _toggle(vidId,statusId,isMain){
     if(st){st.textContent='⚠ Lỗi';st.style.color='var(--danger)'}
   }
 }
-
 async function uploadAndReadImage(){
   const f=document.getElementById('image-file');
   if(!f.files||!f.files[0])return;
@@ -518,10 +568,55 @@ async function uploadAndReadImage(){
   document.getElementById('cam-type').textContent=data.vehicle_type||'unknown';
   const se=document.getElementById('cam-status');
   if(data.valid){se.textContent='✓ '+data.plate;se.style.color='var(--success)'}else{se.textContent='⚠ Không rõ';se.style.color='var(--warn)'}
+  
+  // Hiển thị kết quả ảnh xử lý trong result-preview
+  showAnnotatedResult(data, f.files[0]);
+  
   showToast('Đã xử lý ảnh: '+(data.plate||'không rõ'),data.valid?'success':'warn');
   await loadRecognitionHistory(data.plate);
+  // Auto suggest slot after successful OCR
+  if(data.valid && data.plate){
+    lastOcrPlate=data.plate;
+    lastOcrType=data.vehicle_type||'car';
+    await suggestSlotAfterOCR(data.plate, lastOcrType);
+  }
 }
-
+// ───── SHOW ANNOTATED RESULT ────────────────────────────────────────
+let _lastUploadBlobUrl=null;
+function showAnnotatedResult(data, fileBlob){
+  const preview=document.getElementById('result-preview');
+  const img=document.getElementById('annotated-img');
+  const charsEl=document.getElementById('cam-chars');
+  const countEl=document.getElementById('cam-char-count');
+  
+  // Always show preview panel when we have any data
+  preview.style.display='block';
+  
+  // ── Load image ──
+  if(data.annotated_b64){
+    img.src='data:image/jpeg;base64,'+data.annotated_b64;
+  } else if(data.image_b64){
+    img.src='data:image/jpeg;base64,'+data.image_b64;
+  } else if(fileBlob){
+    if(_lastUploadBlobUrl)URL.revokeObjectURL(_lastUploadBlobUrl);
+    _lastUploadBlobUrl=URL.createObjectURL(fileBlob);
+    img.src=_lastUploadBlobUrl;
+  } else {
+    img.src='';
+  }
+  
+  // ── Character info ──
+  if(data.char_bboxes && data.char_bboxes.length>0){
+    charsEl.textContent=data.char_bboxes.map(c=>c.char).join(' ');
+    countEl.textContent=data.char_bboxes.length+' ký tự';
+  } else if(data.plate){
+    charsEl.textContent=data.plate.replace('-','').split('').join(' ');
+    countEl.textContent=data.plate.replace('-','').length+' ký tự';
+  } else {
+    charsEl.textContent='—';
+    countEl.textContent='0';
+  }
+}
 async function loadRecognitionHistory(plate){
   const p=document.getElementById('history-panel');if(!p)return;
   const items=plate?await api('/api/image_history/'+encodeURIComponent(plate)):await api('/api/recent_history');
@@ -530,7 +625,6 @@ async function loadRecognitionHistory(plate){
     return`<tr><td>${i.created_at||'—'}</td><td style="font-weight:700">${i.plate||'—'}</td><td>${i.vehicle_type||'—'}</td><td>${Number(i.confidence||0).toFixed(2)}</td><td>${vb}</td></tr>`;
   }).join(''):'<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:14px">Chưa có lịch sử</td></tr>';
 }
-
 async function simEntry(){const r=await api('/api/simulate_entry','POST');showToast(r.message,r.success?'success':'error');refreshStatus()}
 async function simExit(){const r=await api('/api/simulate_exit','POST');showToast(r.message,r.success?'success':'error');refreshStatus()}
 function toggleAuto(){
@@ -566,11 +660,10 @@ async function doExit(){
   showToast(r.message,r.success?'success':'error');
   if(r.success&&r.receipt){document.getElementById('receipt-text').textContent=r.receipt;document.getElementById('receipt-box').style.display='block';refreshStatus()}
 }
-
 async function loadReport(period){
   const[rep,ts]=await Promise.all([api('/api/report/'+period),api('/api/top_slots')]);
   setEl('r-txn',rep.txn_count||0);setEl('r-rev',fmtMoney(rep.total_revenue||0));setEl('r-avg',fmtMoney(rep.avg_fee||0));
-  const zb=document.getElementById('zone-bars'),zCols={A:'#27AE60',B:'#4F8EF7',C:'#F39C12'},byZ=rep.by_zone||{},mz=Math.max(...Object.values(byZ),1);
+  const zb=document.getElementById('zone-bars'),zCols={A:'#27AE60',B:'#4F8EF7'},byZ=rep.by_zone||{},mz=Math.max(...Object.values(byZ),1);
   if(zb)zb.innerHTML=Object.entries(byZ).map(([z,v])=>`<div class="bar-row"><span class="bar-label">${z}</span><div class="bar-track"><div class="bar-fill" style="width:${v/mz*100}%;background:${zCols[z]}">${fmtMoney(v)}</div></div></div>`).join('')||'<div style="color:var(--muted)">Chưa có dữ liệu</div>';
   const mb=document.getElementById('method-bars'),mCols={cash:'#27AE60',momo:'#E74C3C',vnpay:'#4F8EF7',zalopay:'#9B59B6'},byM=rep.by_method||{},mm=Math.max(...Object.values(byM),1);
   if(mb)mb.innerHTML=Object.entries(byM).map(([m,v])=>`<div class="bar-row"><span class="bar-label" style="width:52px;font-size:10px">${m.toUpperCase()}</span><div class="bar-track"><div class="bar-fill" style="width:${v/mm*100}%;background:${mCols[m]||'#8B8FA8'}">${fmtMoney(v)}</div></div></div>`).join('')||'<div style="color:var(--muted)">Chưa có dữ liệu</div>';
@@ -579,11 +672,21 @@ async function loadReport(period){
   const trend=rep.occupancy_trend||[],labels=trend.map(d=>d.date.slice(5)),values=trend.map(d=>d.occupancy_pct);
   if(occChart)occChart.destroy();
   const ctx=document.getElementById('occ-chart');
-  if(ctx)occChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'Lấp đầy %',data:values,borderColor:'#4F8EF7',backgroundColor:'rgba(79,142,247,.12)',tension:.4,fill:true,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8B8FA8',font:{size:10}}},y:{min:0,max:100,ticks:{color:'#8B8FA8',font:{size:10},callback:v=>v+'%'}}}}});
+  if(ctx)occChart=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{label:'Lấp đầy %',data:values,borderColor:'#4F8EF7',backgroundColor:'rgba(79,142,247,.12)',tension:.4,fill:true,pointRadius:3}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#8B8FA8',font:{size:10}}},
+        y:{min:0,max:100,ticks:{color:'#8B8FA8',font:{size:10},callback:function(v){return v+'%'}}}
+      }
+    }
+  });
 }
-
 async function saveRates(){
-  for(const{zone,id}of[{zone:'A',id:'rate-a'},{zone:'B',id:'rate-b'},{zone:'C',id:'rate-c'}]){
+  for(const{zone,id}of[{zone:'A',id:'rate-a'},{zone:'B',id:'rate-b'}]){
     const r=parseInt(document.getElementById(id).value);
     if(!r||r<=0){showToast('Giá Zone '+zone+' không hợp lệ','error');return}
     await api('/api/admin/set_rate','POST',{zone,rate:r})
@@ -602,14 +705,12 @@ async function loadUsers(){
   const tb=document.getElementById('users-tbody');
   if(tb)tb.innerHTML=u.map(u=>`<tr><td>${u.username}</td><td><span class="badge ${u.role==='admin'?'valid':'warn'}">${u.role}</span></td><td>${u.full_name||'—'}</td><td>${u.active?'<span style="color:var(--success)">Hoạt động</span>':'<span style="color:var(--danger)">Vô hiệu</span>'}</td></tr>`).join('');
 }
-
 let toastTimer=null;
 function showToast(msg,type='info'){
   const el=document.getElementById('toast');el.textContent=msg;el.className='toast toast-'+type;el.style.display='block';
   if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.style.display='none'},3000);
 }
 document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')})});
-
 refreshStatus();loadRecognitionHistory();loadUsers();
 setInterval(refreshStatus,3000);
 </script>

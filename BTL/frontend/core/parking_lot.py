@@ -1,6 +1,7 @@
 """
 parking_lot.py — ParkingSlot & ParkingLot
 PCS Smart Parking System
+Chỉ còn 2 khu: Zone A (Ô tô), Zone B (Xe máy)
 """
 
 from __future__ import annotations
@@ -8,7 +9,6 @@ from __future__ import annotations
 import sys as _sys, os as _os
 _ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 if _ROOT not in _sys.path: _sys.path.insert(0, _ROOT)
-
 
 
 import json
@@ -30,19 +30,21 @@ class SlotState(Enum):
 class Zone(Enum):
     A = "A"
     B = "B"
-    C = "C"
 
 
 ZONE_VEHICLE_MAP: Dict[Zone, VehicleType] = {
-    Zone.A: VehicleType.CAR_UNDER_7,
+    Zone.A: VehicleType.CAR,
     Zone.B: VehicleType.MOTORBIKE,
-    Zone.C: VehicleType.CAR_7_TO_16,
+}
+
+VEHICLE_ZONE_MAP: Dict[VehicleType, Zone] = {
+    VehicleType.CAR: Zone.A,
+    VehicleType.MOTORBIKE: Zone.B,
 }
 
 ZONE_HOURLY_RATE: Dict[Zone, int] = {
     Zone.A: 15_000,
-    Zone.B: 8_000,
-    Zone.C: 25_000,
+    Zone.B: 5_000,
 }
 
 
@@ -94,7 +96,6 @@ class ParkingLot:
     def __init__(self, name: str = "PCS Parking",
                  config_path: str = None):
         self.name = name
-        # Dùng đường dẫn tuyệt đối nếu không truyền vào
         if config_path is None:
             config_path = os.path.join(_ROOT, "data", "lot_config.json")
         self.config_path = config_path
@@ -109,7 +110,8 @@ class ParkingLot:
             self.save()
 
     def _default_layout(self) -> None:
-        layout = {Zone.A: 20, Zone.B: 12, Zone.C: 8}
+        """Mặc định: Zone A (Ô tô) = 20 slots, Zone B (Xe máy) = 40 slots"""
+        layout = {Zone.A: 20, Zone.B: 40}
         for zone, count in layout.items():
             for i in range(1, count + 1):
                 sid = f"{zone.value}{i:02d}"
@@ -134,21 +136,47 @@ class ParkingLot:
     def available_slots(self, vehicle_type: Optional[VehicleType] = None) -> List[ParkingSlot]:
         candidates = [s for s in self.slots.values() if s.is_available]
         if vehicle_type:
-            zone = next(z for z, vt in ZONE_VEHICLE_MAP.items() if vt == vehicle_type)
-            candidates = [s for s in candidates if s.zone == zone]
+            zone = VEHICLE_ZONE_MAP.get(vehicle_type)
+            if zone:
+                candidates = [s for s in candidates if s.zone == zone]
         return candidates
 
-    def getAvailableSlots(self, vehicle_type: Optional[VehicleType] = None) -> List[ParkingSlot]:
-        slots = self.available_slots(vehicle_type)
-        if not slots:
-            return []
-        if any(slot.slot_id == "A99" for slot in slots):
-            return [self.slots["A99"]]
-        return sorted(slots, key=lambda s: s.slot_id, reverse=True)[:1]
-
     def suggest_slot(self, vehicle_type: VehicleType) -> Optional[ParkingSlot]:
+        """
+        Tự động tìm chỗ trống cho loại xe tương ứng.
+        Trả về chỗ trống đầu tiên (theo thứ tự ID).
+        """
         available = self.available_slots(vehicle_type)
+        # Sắp xếp theo slot_id để ưu tiên ô có số nhỏ
+        available.sort(key=lambda s: s.slot_id)
         return available[0] if available else None
+
+    def suggest_slot_with_info(self, vehicle_type: VehicleType) -> Optional[dict]:
+        """
+        Tự động tìm chỗ trống và trả về dict đầy đủ thông tin
+        dùng cho frontend hiển thị thông báo.
+        """
+        slot = self.suggest_slot(vehicle_type)
+        if not slot:
+            return None
+        return {
+            "slot_id": slot.slot_id,
+            "zone": slot.zone.value,
+            "zone_label": "Zone A" if slot.zone.value == "A" else "Zone B",
+            "vehicle_type": vehicle_type.value,
+            "vehicle_label": vehicle_type.display_name,
+            "hourly_rate": slot.hourly_rate,
+        }
+
+    def get_all_available(self) -> Dict[str, List[str]]:
+        """Trả về danh sách chỗ trống theo zone"""
+        result = {}
+        for zone in Zone:
+            result[zone.value] = [
+                s.slot_id for s in self.slots.values()
+                if s.zone == zone and s.is_available
+            ]
+        return result
 
     def find_by_plate(self, plate: str) -> Optional[ParkingSlot]:
         for s in self.slots.values():
@@ -166,9 +194,6 @@ class ParkingLot:
         self.slots[slot_id] = s
         self.save()
         return s
-
-    def addSlot(self, slot_id: str, zone: Zone) -> ParkingSlot:
-        return self.add_slot(slot_id, zone)
 
     def remove_slot(self, slot_id: str) -> None:
         if slot_id not in self.slots:
@@ -209,10 +234,13 @@ class ParkingLot:
             zone_slots = [s for s in self.slots.values() if s.zone == zone]
             active = [s for s in zone_slots if s.state != SlotState.DISABLED]
             occ = [s for s in zone_slots if s.state == SlotState.OCCUPIED]
+            vehicle_type = ZONE_VEHICLE_MAP[zone]
             summary[zone.value] = {
                 "total": len(active),
                 "occupied": len(occ),
                 "available": len(active) - len(occ),
                 "rate": ZONE_HOURLY_RATE[zone],
+                "vehicle_type": vehicle_type.value,
+                "vehicle_label": vehicle_type.display_name,
             }
         return summary

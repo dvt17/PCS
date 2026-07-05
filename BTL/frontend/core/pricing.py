@@ -1,4 +1,6 @@
-"""pricing.py — Quản lý bảng giá cho hệ thống smart parking."""
+"""pricing.py — Quản lý bảng giá cho hệ thống smart parking.
+Chỉ còn 2 loại xe: Ô tô và Xe máy
+"""
 
 from __future__ import annotations
 
@@ -40,14 +42,8 @@ class Pricing:
         defaults = [
             (VehicleType.MOTORBIKE, "non_combo", 5_000, 50_000, 150_000),
             (VehicleType.MOTORBIKE, "combo", 0, 0, 150_000),
-            (VehicleType.LARGE_MOTORBIKE, "non_combo", 10_000, 80_000, 250_000),
-            (VehicleType.LARGE_MOTORBIKE, "combo", 0, 0, 250_000),
-            (VehicleType.ELECTRIC, "non_combo", 8_000, 70_000, 220_000),
-            (VehicleType.ELECTRIC, "combo", 0, 0, 220_000),
-            (VehicleType.CAR_UNDER_7, "non_combo", 30_000, 200_000, 900_000),
-            (VehicleType.CAR_UNDER_7, "combo", 0, 0, 900_000),
-            (VehicleType.CAR_7_TO_16, "non_combo", 40_000, 250_000, 1_200_000),
-            (VehicleType.CAR_7_TO_16, "combo", 0, 0, 1_200_000),
+            (VehicleType.CAR, "non_combo", 15_000, 150_000, 900_000),
+            (VehicleType.CAR, "combo", 0, 0, 900_000),
         ]
         for vehicle_type, pricing_type, hourly_rate, daily_rate, monthly_rate in defaults:
             self._rules[(vehicle_type, pricing_type)] = PricingRule(
@@ -87,9 +83,6 @@ class Pricing:
     def calculatePrice(self, vehicle_type: VehicleType, pricing_type: str, hours: int = 1) -> int:
         return self.calculate_price(vehicle_type, pricing_type, hours)
 
-    # ─────────────────────────────────────────────────────────────────
-    # ENHANCED: Tính toán phí thực tế dựa trên thời gian check-in/out
-    # ─────────────────────────────────────────────────────────────────
     def calculate_fee_detailed(
         self,
         vehicle_type: VehicleType,
@@ -100,18 +93,7 @@ class Pricing:
     ) -> Dict:
         """
         Tính toán phí chi tiết dựa trên thời gian thực tế.
-        
-        Returns:
-            {
-                "fee": int,              # Phí tính toán (VNĐ)
-                "pricing_type": str,      # "combo" hoặc "non_combo"
-                "duration_hours": int,    # Số giờ lưu
-                "duration_minutes": int,  # Số phút tổng cộng
-                "hourly_rate": int,       # Giá/giờ
-                "reason": str             # Giải thích
-            }
         """
-        # Nếu xe có Combo đang hoạt động
         if has_active_combo and combo_expires_at:
             if datetime.now() < combo_expires_at:
                 return {
@@ -123,13 +105,11 @@ class Pricing:
                     "reason": f"✓ Gói Combo đang hoạt động (hết hạn {combo_expires_at.strftime('%d/%m/%Y')})"
                 }
 
-        # Áp dụng bảng giá non_combo
         duration = check_out_time - check_in_time
         duration_minutes = int(duration.total_seconds() / 60)
-        duration_hours = max(1, (duration_minutes + 59) // 60)  # Làm tròn lên
+        duration_hours = max(1, (duration_minutes + 59) // 60)
 
         fee = self.calculate_price(vehicle_type, "non_combo", duration_hours)
-
         rule = self.get_pricing(vehicle_type, "non_combo")
         return {
             "fee": fee,
@@ -142,4 +122,3 @@ class Pricing:
 
     def list_rules(self) -> list[dict]:
         return [rule.to_dict() for rule in self._rules.values()]
-

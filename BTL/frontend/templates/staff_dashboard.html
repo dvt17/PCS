@@ -12,7 +12,6 @@
   --text:#EAEAEA;--muted:#8B8FA8;
   --zone-a-bg:#1A2E1A;--zone-a-border:#2ECC7166;--zone-a-head:#27AE60;
   --zone-b-bg:#1A1A2E;--zone-b-border:#4F8EF766;--zone-b-head:#4F8EF7;
-  --zone-c-bg:#2E1A1A;--zone-c-border:#E74C3C66;--zone-c-head:#E74C3C;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
@@ -49,14 +48,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .zone-group-a::before{background:var(--zone-a-head)}
 .zone-group-b{background:var(--zone-b-bg);border-color:var(--zone-b-border)}
 .zone-group-b::before{background:var(--zone-b-head)}
-.zone-group-c{background:var(--zone-c-bg);border-color:var(--zone-c-border)}
-.zone-group-c::before{background:var(--zone-c-head)}
 .zone-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,.06)}
 .zone-title{display:flex;align-items:center;gap:8px}
 .zone-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-weight:800;font-size:13px;color:#fff}
 .zone-badge-a{background:var(--zone-a-head)}
 .zone-badge-b{background:var(--zone-b-head)}
-.zone-badge-c{background:var(--zone-c-head)}
 .zone-name{font-size:14px;font-weight:700;color:var(--text)}
 .zone-desc{font-size:11px;color:var(--muted)}
 .zone-stats{font-size:11px;color:var(--muted);text-align:right}
@@ -125,6 +121,14 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .ocr-error-panel{background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.3);border-radius:8px;padding:10px;margin-top:10px;display:none}
 .ocr-error-panel.show{display:block}
+.auto-slot-card{background:#1A2E1A;border:2px solid #2ECC71;border-radius:12px;padding:14px 16px;margin-top:10px;display:none;animation:fadeIn .3s ease}
+.auto-slot-card.show{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.auto-slot-card.error{border-color:#E74C3C;background:#2D1A1A}
+.auto-slot-icon{font-size:28px;display:block;text-align:center;margin-bottom:4px}
+.auto-slot-title{font-size:15px;font-weight:700;text-align:center;margin-bottom:4px}
+.auto-slot-detail{font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px}
+.auto-slot-btn{display:flex;gap:8px;justify-content:center}
 </style>
 </head>
 <body>
@@ -150,7 +154,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
     <!-- ─── METRICS ─── -->
     <div class="metrics">
-      <div class="metric"><div class="metric-label"><i class="fa fa-parking"></i> Tổng ô đỗ</div><div class="metric-val" id="m-total">—</div><div class="metric-sub">A · B · C</div></div>
+      <div class="metric"><div class="metric-label"><i class="fa fa-parking"></i> Tổng ô đỗ</div><div class="metric-val" id="m-total">—</div><div class="metric-sub">A · B</div></div>
       <div class="metric"><div class="metric-label"><i class="fa fa-car"></i> Đang đỗ</div><div class="metric-val" id="m-occ">—</div><div class="metric-sub" id="m-occ-pct">— % lấp đầy</div></div>
       <div class="metric"><div class="metric-label"><i class="fa fa-square-check"></i> Còn trống</div><div class="metric-val" id="m-avail">—</div><div class="metric-sub">ô trống</div></div>
       <div class="metric"><div class="metric-label"><i class="fa fa-money-bill-wave"></i> Doanh thu hôm nay</div><div class="metric-val" id="m-rev">—</div><div class="metric-sub" id="m-txn">— giao dịch</div></div>
@@ -166,7 +170,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
           <div class="cam-row"><span class="cam-key">Loại xe</span><span class="cam-val" id="ci-type">—</span></div>
           <div class="cam-row"><span class="cam-key">Trạng thái</span><span class="cam-val" id="ci-status">—</span></div>
         </div>
-        <div class="cam-stage"><video id="ci-video" autoplay playsinline muted></video><canvas id="ci-canvas"></canvas></div>
+        <div class="cam-stage"><video id="ci-video" autoplay playsinline muted></video><canvas id="ci-canvas"></canvas><img id="ci-cam-preview" style="width:100%;height:100%;object-fit:contain;display:none;position:absolute;top:0;left:0;z-index:5;" alt="Preview image"></div>
         <div class="btn-row">
           <button class="btn btn-primary btn-sm" onclick="captureEntry()"><i class="fa fa-camera"></i> Chụp & nhận diện</button>
           <button class="btn btn-sm" onclick="toggleCam('ci')"><i class="fa fa-video"></i> Camera</button>
@@ -189,11 +193,20 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
           <div style="display:flex;gap:8px">
             <input id="manual-plate" placeholder="Nhập biển số (VD: 51A-12345)" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;outline:none;text-transform:uppercase">
             <select id="manual-vtype" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-size:13px;outline:none">
-              <option value="car_under_7">🚗 Ô tô</option>
+              <option value="car">🚗 Ô tô</option>
               <option value="motorbike">🏍 Xe máy</option>
-              <option value="car_7_to_16">🚛 Xe 7-16 chỗ</option>
             </select>
             <button class="btn btn-success btn-sm" onclick="manualEntry()">Vào</button>
+          </div>
+        </div>
+        <!-- Auto-slot suggestion notification after OCR -->
+        <div class="auto-slot-card" id="auto-slot-card">
+          <div class="auto-slot-icon" id="auto-slot-icon">🚗</div>
+          <div class="auto-slot-title" id="auto-slot-title">Đã tìm thấy chỗ đỗ</div>
+          <div class="auto-slot-detail" id="auto-slot-detail">—</div>
+          <div class="auto-slot-btn">
+            <button class="btn btn-success btn-sm" onclick="confirmAutoEntryStaff()" id="auto-confirm-btn"><i class="fa fa-check"></i> Xác nhận xe vào</button>
+            <button class="btn btn-sm" onclick="hideAutoSlotStaff()">Huỷ</button>
           </div>
         </div>
       </div>
@@ -230,7 +243,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
           <div class="cam-row"><span class="cam-key">Độ tin cậy</span><span class="cam-val" id="co-conf">—</span></div>
           <div class="cam-row"><span class="cam-key">Trạng thái</span><span class="cam-val" id="co-status">—</span></div>
         </div>
-        <div class="cam-stage"><video id="co-video" autoplay playsinline muted></video><canvas id="co-canvas"></canvas></div>
+        <div class="cam-stage"><video id="co-video" autoplay playsinline muted></video><canvas id="co-canvas"></canvas><img id="co-cam-preview" style="width:100%;height:100%;object-fit:contain;display:none;position:absolute;top:0;left:0;z-index:5;" alt="Preview image"></div>
         <div class="btn-row">
           <button class="btn btn-primary btn-sm" onclick="captureExit()"><i class="fa fa-camera"></i> Chụp & nhận diện</button>
           <button class="btn btn-sm" onclick="toggleCam('co')"><i class="fa fa-video"></i> Camera</button>
@@ -309,13 +322,15 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 
 <script>
 const ZONE_CONFIG = {
-  A: {label:'Zone A',description:'🚗 Ô tô dưới 7 chỗ',color:'var(--zone-a-head)',bgClass:'zone-group-a',badgeClass:'zone-badge-a',cols:5},
-  B: {label:'Zone B',description:'🏍 Xe máy',color:'var(--zone-b-head)',bgClass:'zone-group-b',badgeClass:'zone-badge-b',cols:4},
-  C: {label:'Zone C',description:'🚛 Ô tô 7-16 chỗ',color:'var(--zone-c-head)',bgClass:'zone-group-c',badgeClass:'zone-badge-c',cols:4}
+  A: {label:'Zone A',description:'🚗 Ô tô',color:'var(--zone-a-head)',bgClass:'zone-group-a',badgeClass:'zone-badge-a',cols:5},
+  B: {label:'Zone B',description:'🏍️ Xe máy',color:'var(--zone-b-head)',bgClass:'zone-group-b',badgeClass:'zone-badge-b',cols:4}
 };
 
 let camState = {ci:null, co:null};
 let lastCaptured = {plate:'', confidence:0, valid:false, vehicle_type:''};
+let pendingSlotInfo = null;
+let lastOcrPlate = '';
+let lastOcrType = 'car';
 
 function updateClock(){const n=new Date();document.getElementById('clock').textContent=n.toLocaleDateString('vi-VN')+'  '+n.toLocaleTimeString('vi-VN')}
 setInterval(updateClock,1000);updateClock();
@@ -372,6 +387,8 @@ async function refreshExitLog(){
 
 async function toggleCam(prefix){
   const v=document.getElementById(prefix+'-video');
+  const pimg=document.getElementById(prefix+'-cam-preview');
+  if(pimg)pimg.style.display='none';
   if(camState[prefix]){
     camState[prefix].getTracks().forEach(t=>t.stop());
     camState[prefix]=null;
@@ -399,22 +416,20 @@ async function uploadEntryImage(){
   const fd=new FormData();fd.append('image',f.files[0]);
   const data=await(await fetch('/api/process_image',{method:'POST',body:fd})).json();
   updateEntryCam(data);
-  // Show annotated image with label
-  const preview=document.getElementById('ci-preview-img');
-  const previewBox=document.getElementById('ci-upload-preview');
-  const resultBox=document.getElementById('ci-upload-result');
-  if(preview){
+  
+  // Hiển thị ảnh annotated hoặc ảnh gốc trong khung camera
+  const pimg = document.getElementById('ci-cam-preview');
+  if(pimg){
     if(data.annotated_b64){
-      preview.src='data:image/jpeg;base64,'+data.annotated_b64;
-      previewBox.style.display='block';
-      resultBox.innerHTML='<strong>'+data.plate+'</strong> · '+
-        '<span style="color:'+(data.valid?'var(--success)':'var(--warn)')+'">'+
-        (data.valid?'✓ Hợp lệ':'⚠ Không hợp lệ')+'</span> · '+(data.message||'');
+      pimg.src = 'data:image/jpeg;base64,' + data.annotated_b64;
+      pimg.style.display = 'block';
+    } else if(data.image_b64){
+      pimg.src = 'data:image/jpeg;base64,' + data.image_b64;
+      pimg.style.display = 'block';
     } else {
-      const reader=new FileReader();
-      reader.onload=function(e){preview.src=e.target.result;previewBox.style.display='block';};
+      const reader = new FileReader();
+      reader.onload = function(e){ pimg.src = e.target.result; pimg.style.display = 'block'; };
       reader.readAsDataURL(f.files[0]);
-      resultBox.innerHTML='<strong>'+data.plate+'</strong> · '+(data.message||'');
     }
   }
   showToast(data.message||'Đã xử lý ảnh',data.valid?'success':'warn');
@@ -429,13 +444,12 @@ async function captureEntry(){
   const r=await fetch('/api/process_frame',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:c.toDataURL('image/jpeg',0.9)})});
   const data=await r.json();
   updateEntryCam(data);
-  // Hiển thị ảnh annotated nếu có
-  if(data.annotated_b64){
-    const img = document.createElement('img');
-    img.src = 'data:image/jpeg;base64,' + data.annotated_b64;
-    img.style.cssText = 'width:100%;border-radius:8px;display:block;margin-top:8px';
-    document.querySelector('#tab-checkin .cam-stage').innerHTML = '';
-    document.querySelector('#tab-checkin .cam-stage').appendChild(img);
+  
+  // Hiển thị ảnh annotated trong khung camera mà không phá hủy DOM
+  const pimg = document.getElementById('ci-cam-preview');
+  if(pimg && data.annotated_b64){
+    pimg.src = 'data:image/jpeg;base64,' + data.annotated_b64;
+    pimg.style.display = 'block';
   }
 }
 
@@ -445,7 +459,7 @@ async function quickEntry(){
     return;
   }
   const plate=lastCaptured.plate||document.getElementById('manual-plate').value.trim().toUpperCase();
-  const vt=lastCaptured.vehicle_type||'car_under_7';
+  const vt=lastCaptured.vehicle_type||'car';
   const r=await api('/api/entry','POST',{plate,vehicle_type:vt});
   showToast(r.message,r.success?'success':'error');
   if(r.success){lastCaptured={plate:'',confidence:0,valid:false,vehicle_type:''};refreshStatus()}
@@ -470,13 +484,19 @@ async function manualEntry(){
 }
 
 function updateEntryCam(data){
-  lastCaptured={plate:data.plate,confidence:data.confidence||0,valid:data.valid,vehicle_type:data.vehicle_type||'car_under_7'};
+  lastCaptured={plate:data.plate,confidence:data.confidence||0,valid:data.valid,vehicle_type:data.vehicle_type||'car'};
   setEl('ci-plate',data.plate||'—');
   setEl('ci-conf',data.confidence??'—');
   setEl('ci-type',data.vehicle_type||'unknown');
   const st=document.getElementById('ci-status');
   if(data.valid){st.textContent='✓ Hợp lệ';st.style.color='var(--success)';document.getElementById('ocr-error-panel').classList.remove('show')}
   else{st.textContent='⚠ Không hợp lệ';st.style.color='var(--warn)';document.getElementById('ocr-error-panel').classList.add('show');document.getElementById('manual-plate').value=data.plate||''}
+  // Auto suggest slot after successful OCR
+  if(data.valid && data.plate){
+    lastOcrPlate=data.plate;
+    lastOcrType=data.vehicle_type||'car';
+    suggestSlotAfterOCR(data.plate, lastOcrType);
+  }
 }
 
 // ── Checkout ──
@@ -493,6 +513,13 @@ async function captureExit(){
   const st=document.getElementById('co-status');
   if(data.valid){st.textContent='✓ Hợp lệ';st.style.color='var(--success)'}else{st.textContent='⚠ Cần nhập tay';st.style.color='var(--warn)'}
   if(data.plate)document.getElementById('co-exit-plate').value=data.plate;
+  
+  // Hiển thị ảnh annotated
+  const pimg = document.getElementById('co-cam-preview');
+  if(pimg && data.annotated_b64){
+    pimg.src = 'data:image/jpeg;base64,' + data.annotated_b64;
+    pimg.style.display = 'block';
+  }
 }
 
 async function uploadExitImage(){
@@ -505,6 +532,23 @@ async function uploadExitImage(){
   const st=document.getElementById('co-status');
   if(data.valid){st.textContent='✓ Hợp lệ';st.style.color='var(--success)'}else{st.textContent='⚠ Cần nhập tay';st.style.color='var(--warn)'}
   if(data.plate)document.getElementById('co-exit-plate').value=data.plate;
+  
+  // Hiển thị ảnh annotated hoặc ảnh gốc
+  const pimg = document.getElementById('co-cam-preview');
+  if(pimg){
+    if(data.annotated_b64){
+      pimg.src = 'data:image/jpeg;base64,' + data.annotated_b64;
+      pimg.style.display = 'block';
+    } else if(data.image_b64){
+      pimg.src = 'data:image/jpeg;base64,' + data.image_b64;
+      pimg.style.display = 'block';
+    } else {
+      const reader = new FileReader();
+      reader.onload = function(e){ pimg.src = e.target.result; pimg.style.display = 'block'; };
+      reader.readAsDataURL(f.files[0]);
+    }
+  }
+  
   showToast(data.message||'Đã xử lý ảnh',data.valid?'success':'warn');
 }
 
@@ -524,8 +568,8 @@ async function doStaffExit(){
 // ── Lot ──
 function renderSlotsByZone(cid,slots,compact){
   const el=document.getElementById(cid);if(!el)return;
-  const g={A:[],B:[],C:[]};slots.forEach(s=>{if(g[s.zone])g[s.zone].push(s)});
-  el.innerHTML=['A','B','C'].map(k=>{
+  const g={A:[],B:[]};slots.forEach(s=>{if(g[s.zone])g[s.zone].push(s)});
+  el.innerHTML=['A','B'].map(k=>{
     const c=ZONE_CONFIG[k],zs=g[k]||[];if(!zs.length)return'';
     const total=zs.length,occ=zs.filter(s=>s.state==='occupied'||s.state==='entering'||s.state==='exiting').length,pct=total?Math.round(occ/total*100):0;
     const sh=zs.map(s=>{const p=s.plate?`<div class="slot-plate">${s.plate.length>6?s.plate.slice(-6):s.plate}</div>`:'';return`<div class="slot ${s.state}" title="[${s.id}] ${s.state.toUpperCase()}${s.plate?' · '+s.plate:''}"><div class="slot-id">${s.id}</div>${p}</div>`}).join('');
@@ -536,7 +580,7 @@ function renderSlotsByZone(cid,slots,compact){
 
 function renderZoneOcc(zones){
   const el=document.getElementById('zone-occ');if(!el)return;
-  const n={A:'Zone A · Ô tô',B:'Zone B · Xe máy',C:'Zone C · 7-16'},c={A:'#27AE60',B:'#4F8EF7',C:'#F39C12'};
+  const n={A:'Zone A · Ô tô',B:'Zone B · Xe máy'},c={A:'#27AE60',B:'#4F8EF7'};
   el.innerHTML=Object.entries(zones).map(([z,info])=>{
     const pct=info.total?Math.round(info.occupied/info.total*100):0;
     const col=pct>80?'#E74C3C':pct>50?'#F39C12':c[z];
@@ -561,6 +605,54 @@ let toastTimer=null;
 function showToast(msg,type='info'){
   const el=document.getElementById('toast');el.textContent=msg;el.className='toast toast-'+type;el.style.display='block';
   if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.style.display='none'},3000);
+}
+
+// ── Auto-slot suggestion ──
+async function suggestSlotAfterOCR(plate, vehicle_type){
+  if(!plate)return;
+  const result=await api('/api/suggest_slot','POST',{plate,vehicle_type});
+  const card=document.getElementById('auto-slot-card');
+  const icon=document.getElementById('auto-slot-icon');
+  const title=document.getElementById('auto-slot-title');
+  const detail=document.getElementById('auto-slot-detail');
+  const confirmBtn=document.getElementById('auto-confirm-btn');
+  if(result.success && result.has_slot && result.suggested_slot){
+    pendingSlotInfo={plate,vehicle_type,slot_info:result.suggested_slot};
+    icon.textContent=vehicle_type==='motorbike'?'🏍':'🚗';
+    title.textContent='✅ Đã tìm thấy chỗ đỗ trống!';
+    detail.textContent=`🔹 ${result.vehicle_label} ${plate} → ${result.suggested_slot.zone_label} · ${result.suggested_slot.slot_id}  |  Giá: ${fmtMoney(result.suggested_slot.hourly_rate)}/giờ`;
+    card.className='auto-slot-card show';
+    confirmBtn.disabled=false;
+    confirmBtn.innerHTML='<i class="fa fa-check"></i> Xác nhận xe vào';
+  } else if(result.success===false && result.has_slot && result.suggested_slot){
+    icon.textContent='⚠️';
+    title.textContent='Xe đã đỗ trong bãi';
+    detail.textContent=result.message;
+    card.className='auto-slot-card show error';
+    confirmBtn.disabled=true;
+    confirmBtn.innerHTML='Đã đỗ';
+  } else {
+    icon.textContent='❌';
+    title.textContent='Bãi đỗ đầy!';
+    detail.textContent=result.message||'Không còn chỗ trống cho loại xe này';
+    card.className='auto-slot-card show error';
+    confirmBtn.disabled=true;
+    confirmBtn.innerHTML='Hết chỗ';
+  }
+}
+function hideAutoSlotStaff(){
+  document.getElementById('auto-slot-card').className='auto-slot-card';
+  pendingSlotInfo=null;
+}
+async function confirmAutoEntryStaff(){
+  if(!pendingSlotInfo){showToast('Không có thông tin xe để xác nhận','warn');return}
+  const {plate,vehicle_type}=pendingSlotInfo;
+  const r=await api('/api/auto_entry','POST',{plate,vehicle_type});
+  showToast(r.message,r.success?'success':'error');
+  if(r.success){
+    hideAutoSlotStaff();
+    refreshStatus();
+  }
 }
 
 refreshStatus();

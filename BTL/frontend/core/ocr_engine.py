@@ -1,10 +1,11 @@
 """
 ocr_engine.py — Nhận diện biển số (YOLOv26n + character_detector.pt + EasyOCR)
 PCS Smart Parking System
+Chỉ còn 2 loại xe: Ô tô và Xe máy
 
 Pipeline v3 (Dual-model):
-  Frame → yolo26n.pt (vehicle detection + plate detection) →
-    ├─ Vehicle type (class name from YOLO)
+  Frame → yolo26s.pt (vehicle detection + plate detection) →
+    ├─ Vehicle type (car / motorbike from YOLO class)
     └─ Plate region crop →
         character_detector.pt (character-level detection) [PRIMARY]
         └─ Fallback: EasyOCR multi-strategy [SECONDARY]
@@ -22,8 +23,9 @@ import base64
 import sys as _sys, os as _os
 _ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 PROJECT_ROOT = _os.path.dirname(_ROOT)
-DEFAULT_YOLO_MODEL = _os.getenv("PCS_YOLO_MODEL", _os.path.join(PROJECT_ROOT, "yolo26n.pt"))
-CHARACTER_DETECTOR_MODEL = _os.getenv("PCS_CHAR_MODEL", _os.path.join(PROJECT_ROOT, "character_detector.pt"))
+# ── Model paths: gắn trực tiếp vào source ──
+DEFAULT_YOLO_MODEL = _os.getenv("PCS_YOLO_MODEL", r"D:\UTH\BaiHoc\ITS\PCS\BTL\best.pt")
+CHARACTER_DETECTOR_MODEL = _os.getenv("PCS_CHAR_MODEL", r"D:\UTH\BaiHoc\ITS\PCS\BTL\character_detector.pt")
 if _ROOT not in _sys.path: _sys.path.insert(0, _ROOT)
 
 
@@ -89,7 +91,8 @@ class OCRResult:
     annotated_path: Optional[str] = None
     timestamp: datetime = None
     vehicle_type: str = "unknown"         # loại xe từ YOLO class
-    vehicle_label: str = ""               # tên hiển thị (VD: "Ô tô", "Xe máy", "Xe buýt")
+    vehicle_label: str = ""               # tên hiển thị (VD: "🚗 Ô tô", "🏍️ Xe máy")
+    char_bboxes: Optional[list] = None    # list of {char, conf, x1, y1, x2, y2} for each detected character
 
     def __post_init__(self):
         if self.timestamp is None:
@@ -114,7 +117,7 @@ class OCRResult:
 class PlateRecognizer:
     """
     Pipeline v3 (Dual-model + EasyOCR fallback):
-      Frame → yolo26n.pt (vehicle + plate detection) →
+      Frame → best.pt (vehicle + plate detection) →
         character_detector.pt (character-level plate reading) [PRIMARY]
         └→ EasyOCR multi-strategy [FALLBACK] →
           Normalize → Validate → OCRResult
@@ -138,7 +141,7 @@ class PlateRecognizer:
             self._load_models()
 
     def _load_models(self) -> None:
-        """Load cả 3 model: yolo26n.pt, character_detector.pt, EasyOCR."""
+        """Load cả 3 model: yolo26s.pt, character_detector.pt, EasyOCR."""
         print(f"[OCR] Đang tải YOLO từ {self.model_path}...")
         if not _os.path.exists(self.model_path):
             raise FileNotFoundError(f"YOLO model not found: {self.model_path}")
@@ -157,10 +160,16 @@ class PlateRecognizer:
         print("[OCR] Sẵn sàng.")
 
     # ── API chính ────────────────────────────────────────────────────
-    def recognize_from_frame(self, frame) -> OCRResult:
+    def recognize_from_frame(self, frame, image_path: str = None) -> OCRResult:
         if self._demo:
-            return self._demo_result()
-        return self._real_recognize(frame)
+            return self._demo_result(image_path=image_path)
+        result = self._real_recognize(frame, image_path=image_path)
+        # Always annotate to show detection results visually
+        if image_path is not None:
+            annotated = self._annotate_image(frame, result)
+            if annotated:
+                result.annotated_path = annotated
+        return result
 
     def recognize_from_file(self, image_path: str) -> OCRResult:
         if self._demo:
@@ -172,14 +181,14 @@ class PlateRecognizer:
             return OCRResult(plate="", confidence=0.0, raw_text="", image_path=image_path)
 
         result = self._real_recognize(frame, image_path=image_path)
-        if result.bbox and result.plate:
-            annotated = self._annotate_image(frame, result)
-            if annotated:
-                result.annotated_path = annotated
+        # Always annotate to show detection results visually
+        annotated = self._annotate_image(frame, result)
+        if annotated:
+            result.annotated_path = annotated
         return result
 
     def analyze_frame(self, frame, image_path: str = None, yolo_class_name: str = None) -> dict:
-        result = self.recognize_from_frame(frame)
+        result = self.recognize_from_frame(frame, image_path=image_path)
         vehicle_type = result.vehicle_type or self._infer_vehicle_type(
             image_path, result.plate, result.bbox, yolo_class_name
         )
@@ -190,6 +199,16 @@ class PlateRecognizer:
                     annotated_b64 = base64.b64encode(f.read()).decode("utf-8")
             except Exception:
                 pass
+        # Chuyển char_bboxes thành dạng list để JSON serializable
+        char_boxes = None
+        if result.char_bboxes:
+            char_boxes = [{
+                "char": c["char"],
+                "conf": c["confidence"],
+                "x1": c["x1"], "y1": c["y1"],
+                "x2": c["x2"], "y2": c["y2"],
+            } for c in result.char_bboxes]
+
         return {
             "plate": result.plate,
             "confidence": round(result.confidence, 2),
@@ -200,6 +219,7 @@ class PlateRecognizer:
             "annotated_path": result.annotated_path,
             "annotated_b64": annotated_b64,
             "bbox": list(result.bbox) if result.bbox else None,
+            "char_bboxes": char_boxes,
         }
 
     def analyze_image_file(self, image_path: str) -> dict:
@@ -212,6 +232,16 @@ class PlateRecognizer:
                     annotated_b64 = base64.b64encode(f.read()).decode("utf-8")
             except Exception:
                 pass
+        # Chuyển char_bboxes thành dạng list để JSON serializable
+        char_boxes = None
+        if result.char_bboxes:
+            char_boxes = [{
+                "char": c["char"],
+                "conf": c["confidence"],
+                "x1": c["x1"], "y1": c["y1"],
+                "x2": c["x2"], "y2": c["y2"],
+            } for c in result.char_bboxes]
+
         return {
             "plate": result.plate,
             "confidence": round(result.confidence, 2),
@@ -222,18 +252,18 @@ class PlateRecognizer:
             "annotated_path": result.annotated_path,
             "annotated_b64": annotated_b64,
             "bbox": list(result.bbox) if result.bbox else None,
+            "char_bboxes": char_boxes,
         }
 
     @staticmethod
     def _infer_vehicle_type(image_path: str, plate: str, bbox: tuple = None, yolo_class_name: str = None) -> str:
+        """Map YOLO class to 2-type system: car or motorbike"""
         if yolo_class_name:
             name_lower = yolo_class_name.lower()
-            if any(kw in name_lower for kw in ('car', 'oto', 'sedan', 'suv')):
-                return "car_under_7"
-            if any(kw in name_lower for kw in ('truck', 'bus', 'van', 'xe_tai', 'xe_buyt')):
-                return "car_7_to_16"
-            if any(kw in name_lower for kw in ('motorbike', 'motorcycle', 'xemay', 'bike')):
+            if any(kw in name_lower for kw in ('motorbike', 'motorcycle', 'xemay', 'xe_may', 'bike', 'xe máy')):
                 return "motorbike"
+            # Everything else is a car
+            return "car"
 
         if image_path and bbox:
             x1, y1, x2, y2 = bbox
@@ -242,17 +272,17 @@ class PlateRecognizer:
             area = bw * bh
             ratio = bh / max(bw, 1)
             if ratio > 0.30 and area > 5000:
-                return "car_under_7"
+                return "car"
             elif ratio <= 0.30 and area > 1000:
                 return "motorbike"
 
         if not plate:
-            return "unknown"
+            return "car"
         plate_clean = plate.replace('-', '').upper()
         if len(plate_clean) >= 8:
             m = re.match(r"\d{2}[A-Z]{1,2}\d{5}", plate_clean)
             if m:
-                return "car_under_7"
+                return "car"
             return "motorbike"
         else:
             return "motorbike"
@@ -262,11 +292,11 @@ class PlateRecognizer:
         """
         Pipeline v3:
           1. Tiền xử lý ảnh tối
-          2. yolo26n.pt → vehicle type + plate bbox
+          2. yolo26s.pt → vehicle type + plate bbox
           3. character_detector.pt [PRIMARY] → đọc ký tự
           4. EasyOCR multi-strategy [FALLBACK]
           5. Chuẩn hoá + position-aware correction
-          6. Map vehicle type từ YOLO class
+          6. Map vehicle type từ YOLO class (car / motorbike)
         """
         processed_frame = self._enhance_low_light(frame)
         yolo_results = self._yolo(processed_frame, conf=0.5, verbose=False)
@@ -287,6 +317,9 @@ class PlateRecognizer:
                 if any(kw in cls_name for kw in ('plate', 'license', 'bienso', 'bien_so', 'bien')):
                     plate_bbox = (x1, y1, x2, y2)
                     yolo_plate_conf = conf
+                elif any(kw in cls_name for kw in ('char', 'letter', 'digit', 'ky_tu', 'kytu')):
+                    # Character-level detection comes from char_detector, not main YOLO
+                    pass
                 elif any(kw in cls_name for kw in (
                     'car', 'oto', 'xe_con', 'xecon', 'sedan', 'suv',
                     'motorbike', 'motorcycle', 'xemay', 'xe_may', 'bike',
@@ -320,6 +353,7 @@ class PlateRecognizer:
         best_conf = 0.0
         best_raw = ""
         used_method = "none"
+        best_char_bboxes = None  # lưu bbox từng ký tự
 
         if plate_bbox is not None:
             x1, y1, x2, y2 = plate_bbox
@@ -339,8 +373,20 @@ class PlateRecognizer:
                             best_conf = combined_conf
                             best_raw = raw
                             used_method = "char_detector"
+                            # Chuyển char_bboxes từ crop coordinates sang frame coordinates
+                            if char_result.get("char_details"):
+                                best_char_bboxes = []
+                                for cd in char_result["char_details"]:
+                                    best_char_bboxes.append({
+                                        "char": cd["char"],
+                                        "confidence": round(cd["confidence"], 2),
+                                        "x1": x1 + cd["x"],
+                                        "y1": y1 + cd["y"],
+                                        "x2": x1 + cd["x"] + cd["w"],
+                                        "y2": y1 + cd["y"] + cd["h"],
+                                    })
 
-                # PRIORITY 2: EasyOCR multi-strategy
+                # PRIORITY 2: EasyOCR multi-strategy (không có char_bboxes từ EasyOCR, chỉ có raw text)
                 if best_conf < 0.5 or not best_plate:
                     strategies = self._preprocess_plate_strategies(crop)
                     for strategy_name, plate_img in strategies:
@@ -358,6 +404,27 @@ class PlateRecognizer:
                                         best_conf = conf
                                         best_raw = raw
                                         used_method = f"easyocr_{strategy_name}"
+                                        # EasyOCR trả về poly points, chuyển sang bbox
+                                        if good_results[0][0]:
+                                            best_char_bboxes = []
+                                            for det in good_results:
+                                                pts = det[0]
+                                                ch = det[1]
+                                                if len(pts) >= 4:
+                                                    xs = [p[0] for p in pts]
+                                                    ys = [p[1] for p in pts]
+                                                    cx = x1 + int(min(xs))
+                                                    cy = y1 + int(min(ys))
+                                                    cw = x1 + int(max(xs)) - cx
+                                                    ch_h = y1 + int(max(ys)) - cy
+                                                    best_char_bboxes.append({
+                                                        "char": ch,
+                                                        "confidence": round(float(det[2]), 2),
+                                                        "x1": cx,
+                                                        "y1": cy,
+                                                        "x2": cx + cw,
+                                                        "y2": cy + ch_h,
+                                                    })
 
         # Fallback: OCR toàn ảnh
         if not best_plate or best_conf < 0.35:
@@ -373,41 +440,56 @@ class PlateRecognizer:
                         best_conf = conf
                         best_raw = raw
                         used_method = "easyocr_full_frame"
+                        # Lấy char_bboxes từ full frame OCR
+                        best_char_bboxes = []
+                        for det in good_full:
+                            pts = det[0]
+                            ch = det[1]
+                            if len(pts) >= 4:
+                                xs = [p[0] for p in pts]
+                                ys = [p[1] for p in pts]
+                                best_char_bboxes.append({
+                                    "char": ch,
+                                    "confidence": round(float(det[2]), 2),
+                                    "x1": int(min(xs)),
+                                    "y1": int(min(ys)),
+                                    "x2": int(max(xs)),
+                                    "y2": int(max(ys)),
+                                })
 
-        # Map vehicle type
+        # Map vehicle type — ONLY 2 TYPES: car or motorbike
         vt_mapped = "unknown"
         vl_mapped = ""
         if vehicle_type_yolo:
             vn_lower = vehicle_type_yolo.lower()
-            if any(kw in vn_lower for kw in ('car', 'oto', 'sedan', 'suv')):
-                vt_mapped = "car_under_7"
-                vl_mapped = "🚗 Ô tô"
-            elif any(kw in vn_lower for kw in ('truck', 'bus', 'van', 'xe_tai', 'xe_buyt')):
-                vt_mapped = "car_7_to_16"
-                vl_mapped = "🚌 Xe lớn"
-            elif any(kw in vn_lower for kw in ('motorbike', 'motorcycle', 'xemay', 'bike')):
+            if any(kw in vn_lower for kw in ('motorbike', 'motorcycle', 'xemay', 'bike')):
                 vt_mapped = "motorbike"
                 vl_mapped = "🏍️ Xe máy"
             else:
-                vt_mapped = vehicle_type_yolo
-                vl_mapped = vehicle_type_yolo
+                # car, oto, sedan, suv, truck, bus, van — all → car
+                vt_mapped = "car"
+                vl_mapped = "🚗 Ô tô"
 
         print(f"[OCR] method={used_method} plate={best_plate} conf={best_conf:.2%} "
               f"vt_yolo={vehicle_type_yolo} vt_mapped={vt_mapped} "
               f"bbox={plate_bbox} vehicle_bbox={vehicle_bbox}")
+        if best_char_bboxes:
+            print(f"[OCR] char_bboxes={len(best_char_bboxes)} chars: {''.join(c['char'] for c in best_char_bboxes) if best_char_bboxes else 'none'}")
 
         if best_plate and best_conf >= 0.35:
             return OCRResult(
                 plate=best_plate, confidence=best_conf, raw_text=best_raw,
                 bbox=plate_bbox, vehicle_bbox=vehicle_bbox,
                 image_path=image_path, vehicle_type=vt_mapped,
-                vehicle_label=vl_mapped,
+                vehicle_label=vl_mapped, char_bboxes=best_char_bboxes,
             )
 
         return OCRResult(
             plate="", confidence=0.0, raw_text="[Không phát hiện biển số]",
-            image_path=image_path, vehicle_type=vt_mapped,
-            vehicle_bbox=vehicle_bbox, vehicle_label=vl_mapped,
+            image_path=image_path, bbox=plate_bbox,
+            vehicle_bbox=vehicle_bbox, vehicle_type=vt_mapped,
+            vehicle_label=vl_mapped,
+            char_bboxes=best_char_bboxes,
         )
 
     # ── Character Detector ───────────────────────────────────────────
@@ -425,9 +507,7 @@ class PlateRecognizer:
             if not results or not results[0].boxes:
                 return None
 
-            # Filter: only classes that are single characters (digits 0-9, letters A-Z)
-            # character_detector classes: 0-9 → '0'-'9', 10-30 → 'A'-'Z', 31 → 'license plates' (skip)
-            VALID_CHAR_CLASS_IDS = set(range(31))  # 0-30 = digits + letters, 31 = "license plates" (skip)
+            VALID_CHAR_CLASS_IDS = set(range(31))
             chars = []
             for box in results[0].boxes:
                 cls_id = int(box.cls[0])
@@ -436,7 +516,6 @@ class PlateRecognizer:
                 x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
                 conf = float(box.conf[0])
                 char_label = char_classes.get(cls_id, "")
-                # Class names are already single chars: "0", "1", ..., "A", "B", ...
                 if len(char_label) != 1:
                     continue
                 if conf >= 0.3 and char_label:
@@ -453,7 +532,6 @@ class PlateRecognizer:
             if len(chars) < 3:
                 return None
 
-            # Sắp xếp: cluster theo dòng Y, sau đó X
             chars.sort(key=lambda c: c["y"])
             y_center = [c["cy"] for c in chars]
             y_spread = max(y_center) - min(y_center)
@@ -586,7 +664,6 @@ class PlateRecognizer:
                 gray_deskewed = cv2.resize(gray_deskewed, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_CUBIC)
                 deskewed_rgb = cv2.resize(deskewed_rgb, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_CUBIC)
 
-            # Strategy 1: CLAHE + Bilateral + Sharpen
             clahe = cv2.createCLAHE(clipLimit=3.5, tileGridSize=(8, 8))
             enhanced = clahe.apply(gray_deskewed)
             denoised = cv2.bilateralFilter(enhanced, 7, 25, 25)
@@ -594,27 +671,20 @@ class PlateRecognizer:
             sharpened = cv2.filter2D(denoised, -1, kernel_sharp)
             strategies.append(("clahe_bilateral_sharpen", sharpened))
 
-            # Strategy 2: Adaptive threshold
             binary = cv2.adaptiveThreshold(gray_deskewed, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 15, 2)
             strategies.append(("adaptive_threshold", cv2.medianBlur(binary, 3)))
 
-            # Strategy 3: OTSU
             _, otsu = cv2.threshold(gray_deskewed, 0, 255, cv2.THRESH_OTSU)
             if np.mean(otsu) > 127:
                 otsu = cv2.bitwise_not(otsu)
             strategies.append(("otsu", otsu))
 
-            # Strategy 4: Morphological close
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
             strategies.append(("morph_close", cv2.morphologyEx(sharpened.copy(), cv2.MORPH_CLOSE, kernel)))
 
-            # Strategy 5: Gray + CLAHE nhẹ
             clahe_light = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
             strategies.append(("gray_clahe_light", clahe_light.apply(gray_deskewed)))
-
-            # Strategy 6: RGB gốc
             strategies.append(("rgb_deskewed", deskewed_rgb))
-
         except Exception:
             strategies.append(("original", plate_region))
 
@@ -623,61 +693,86 @@ class PlateRecognizer:
     # ── Vẽ annotation ────────────────────────────────────────────────
     @staticmethod
     def _annotate_image(frame: np.ndarray, result: OCRResult) -> Optional[str]:
-        if not result.bbox or not result.image_path:
+        if not result.image_path:
             return None
         try:
             img = frame.copy()
+            h_img, w_img = img.shape[:2]
             font = cv2.FONT_HERSHEY_SIMPLEX
 
-            # ── 1. Vẽ khung BIỂN SỐ ─────────────────────────────────
-            x1, y1, x2, y2 = result.bbox
-            plate_color = (46, 204, 113) if result.is_valid else (243, 156, 18)
-            cv2.rectangle(img, (x1, y1), (x2, y2), plate_color, 4)
+            # Status bar trên cùng: hiển thị thông tin phát hiện
+            status_bg_color = (30, 30, 80)  # dark blue-gray for status bar
+            status_text = f"PCS OCR | Biển: {result.plate or '???'} | Conf: {result.confidence:.0%}" if result.plate else "PCS OCR | Không phát hiện biển số"
+            (st_w, st_h), _ = cv2.getTextSize(status_text, font, 0.7, 2)
+            bar_h = st_h + 20
+            cv2.rectangle(img, (0, 0), (w_img, bar_h), status_bg_color, -1)
+            cv2.putText(img, status_text, (10, bar_h - 8), font, 0.7, (200, 200, 255), 2)
 
-            # Label biển số
-            label = result.plate
-            if result.confidence > 0:
-                label += f" ({result.confidence:.0%})"
-            (tw, th), _ = cv2.getTextSize(label, font, 1.0, 2)
-            lx1, ly1 = x1, max(y1 - th - 12, 0)
-            cv2.rectangle(img, (lx1, ly1), (x1 + tw + 16, y1), plate_color, -1)
-            cv2.putText(img, label, (x1 + 8, y1 - 6), font, 1.0, (0, 0, 0), 2)
-
-            # Badge VALID / LOW CONF
-            badge = "VALID" if result.is_valid else "LOW CONF"
-            (bw, bh), _ = cv2.getTextSize(badge, font, 0.6, 1)
-            badge_bg = (20, 80, 30) if result.is_valid else (80, 50, 20)
-            cv2.rectangle(img, (x1, y2 + 6), (x1 + bw + 12, y2 + bh + 12), badge_bg, -1)
-            cv2.putText(img, badge, (x1 + 6, y2 + bh + 4), font, 0.6, plate_color, 1)
-
-            # ── 2. Vẽ khung PHƯƠNG TIỆN + NHÃN LOẠI XE ────────────
+            # ── 1. Vẽ khung PHƯƠNG TIỆN ─────────────────────────────
             if result.vehicle_bbox is not None and result.vehicle_label:
                 vx1, vy1, vx2, vy2 = result.vehicle_bbox
-                # Màu xanh dương cho khung xe (dễ phân biệt với khung biển)
-                vehicle_color = (255, 144, 30)  # xanh dương BGR
-
-                # Vẽ khung xe (nét đứt bằng cách vẽ 2 nét liền + khoảng trống)
-                cv2.rectangle(img, (vx1, vy1), (vx2, vy2), vehicle_color, 2)
-
-                # Label loại xe (phía trên khung xe, bên trái)
+                vehicle_color = (255, 144, 30)
+                cv2.rectangle(img, (vx1, vy1), (vx2, vy2), vehicle_color, 3)
                 vlabel = result.vehicle_label
                 (vw, vh), _ = cv2.getTextSize(vlabel, font, 0.7, 2)
-
-                # Vẽ background label
-                vlx1 = vx1
-                vly1 = max(vy1 - vh - 10, 0)
-                vlx2 = vx1 + vw + 14
-                vly2 = vy1
-                cv2.rectangle(img, (vlx1, vly1), (vlx2, vly2), vehicle_color, -1)
-
-                # Vẽ text loại xe
+                cv2.rectangle(img, (vx1, max(vy1 - vh - 10, 0)), (vx1 + vw + 14, vy1), vehicle_color, -1)
                 cv2.putText(img, vlabel, (vx1 + 7, vy1 - 4), font, 0.7, (255, 255, 255), 2)
+
+            # ── 2. Vẽ khung BIỂN SỐ + từng ký tự ─────────────────────
+            if result.bbox is not None:
+                x1, y1, x2, y2 = result.bbox
+                plate_color = (46, 204, 113) if result.is_valid else (243, 156, 18)
+                cv2.rectangle(img, (x1, y1), (x2, y2), plate_color, 4)
+
+                # Label
+                if result.plate:
+                    label = result.plate
+                    if result.confidence > 0:
+                        label += f" ({result.confidence:.0%})"
+                    (tw, th), _ = cv2.getTextSize(label, font, 1.0, 2)
+                    cv2.rectangle(img, (x1, max(y1 - th - 12, 0)), (x1 + tw + 16, y1), plate_color, -1)
+                    cv2.putText(img, label, (x1 + 8, y1 - 6), font, 1.0, (0, 0, 0), 2)
+
+                    badge = "VALID" if result.is_valid else "LOW CONF"
+                    (bw, bh), _ = cv2.getTextSize(badge, font, 0.6, 1)
+                    badge_bg = (20, 80, 30) if result.is_valid else (80, 50, 20)
+                    cv2.rectangle(img, (x1, y2 + 6), (x1 + bw + 12, y2 + bh + 12), badge_bg, -1)
+                    cv2.putText(img, badge, (x1 + 6, y2 + bh + 4), font, 0.6, plate_color, 1)
+                else:
+                    cv2.putText(img, "NO PLATE", (x1 + 8, y1 - 8), font, 0.8, (243, 156, 18), 2)
+
+            # ── 3. Vẽ KHUNG TỪNG KÝ TỰ trên biển số ────────────────
+            if result.char_bboxes:
+                for c in result.char_bboxes:
+                    cx1, cy1, cx2, cy2 = c["x1"], c["y1"], c["x2"], c["y2"]
+                    char = c["char"]
+                    conf_char = c["confidence"]
+
+                    # Vẽ khung từng ký tự (màu xanh cyan đậm)
+                    char_color = (0, 255, 255)  # cyan
+                    cv2.rectangle(img, (cx1, cy1), (cx2, cy2), char_color, 2)
+
+                    # Vẽ label ký tự ngay phía trên bounding box của nó
+                    char_label = f"{char}"
+                    (cw, ch_t), _ = cv2.getTextSize(char_label, font, 0.5, 1)
+                    clx1 = cx1
+                    cly1 = max(cy1 - ch_t - 6, 0)
+                    clx2 = cx1 + cw + 6
+                    cly2 = cy1
+                    cv2.rectangle(img, (clx1, cly1), (clx2, cly2), (0, 180, 255), -1)  # cam fill
+                    cv2.putText(img, char_label, (cx1 + 3, cy1 - 2), font, 0.5, (0, 0, 0), 1)
+
+            # No detection overlay at all — show message on image
+            if not result.bbox and not result.vehicle_bbox and not result.char_bboxes:
+                cv2.putText(img, "Khong phat hien bien so / phuong tien", (30, h_img // 2),
+                            font, 0.9, (243, 156, 18), 2)
 
             name, ext = _os.path.splitext(result.image_path)
             annotated_path = f"{name}_annotated{ext}"
             cv2.imwrite(annotated_path, img)
             return annotated_path
-        except Exception:
+        except Exception as e:
+            print(f"[OCR] _annotate_image error: {e}")
             return None
 
     # ── Demo ─────────────────────────────────────────────────────────
@@ -696,23 +791,22 @@ class PlateRecognizer:
         bbox = None
         vehicle_bbox = None
 
-        # Map plate demo → vehicle type
-        # Các biển mẫu được gán loại xe cố định để demo trực quan
+        # Only 2 types: car and motorbike
         plate_to_vtype = {
-            "51A-12345": ("car_under_7", "🚗 Ô tô"),
-            "59B-67890": ("car_under_7", "🚗 Ô tô"),
-            "43C-11111": ("car_under_7", "🚗 Ô tô"),
-            "30D-22222": ("car_under_7", "🚗 Ô tô"),
+            "51A-12345": ("car", "🚗 Ô tô"),
+            "59B-67890": ("car", "🚗 Ô tô"),
+            "43C-11111": ("car", "🚗 Ô tô"),
+            "30D-22222": ("car", "🚗 Ô tô"),
             "51F-33333": ("motorbike", "🏍️ Xe máy"),
             "92G-44444": ("motorbike", "🏍️ Xe máy"),
-            "62H-55555": ("car_7_to_16", "🚌 Xe lớn"),
-            "74K-66666": ("car_7_to_16", "🚌 Xe lớn"),
-            "51L-77777": ("car_under_7", "🚗 Ô tô"),
-            "88M-88888": ("car_under_7", "🚗 Ô tô"),
+            "62H-55555": ("car", "🚗 Ô tô"),
+            "74K-66666": ("car", "🚗 Ô tô"),
+            "51L-77777": ("car", "🚗 Ô tô"),
+            "88M-88888": ("car", "🚗 Ô tô"),
             "20P-00001": ("motorbike", "🏍️ Xe máy"),
-            "61R-34343": ("car_7_to_16", "🚌 Xe lớn"),
+            "61R-34343": ("car", "🚗 Ô tô"),
         }
-        vt_mapped, vl_mapped = plate_to_vtype.get(normalized, ("car_under_7", "🚗 Ô tô"))
+        vt_mapped, vl_mapped = plate_to_vtype.get(normalized, ("car", "🚗 Ô tô"))
 
         if image_path and _os.path.exists(image_path):
             try:
@@ -728,7 +822,6 @@ class PlateRecognizer:
                     y2 = min(h, cy + bh // 2)
                     bbox = (x1, y1, x2, y2)
 
-                    # ── Vehicle bbox (bao quanh plate, mở rộng ra để mô phỏng khung xe) ──
                     pad_w = int((x2 - x1) * 1.8)
                     pad_h = int((y2 - y1) * 3.0)
                     vx1 = max(0, x1 - pad_w)
@@ -740,13 +833,11 @@ class PlateRecognizer:
                     draw = ImageDraw.Draw(img)
                     is_valid = normalized and bool(VN_PLATE_PATTERN.match(normalized)) and conf >= 0.70
                     plate_color_rgb = (46, 204, 113) if is_valid else (243, 156, 18)
-                    vehicle_color_rgb = (30, 144, 255)  # xanh dương cho khung xe
+                    vehicle_color_rgb = (30, 144, 255)
 
-                    # ── Vẽ khung PHƯƠNG TIỆN (xanh dương) ──
                     for i in range(3):
                         draw.rectangle([vx1 + i, vy1 + i, vx2 - i, vy2 - i], outline=vehicle_color_rgb)
 
-                    # Label loại xe (phía trên khung xe, bên trái)
                     vlabel = vl_mapped
                     font = None
                     font_size = max(16, int(h * 0.035))
@@ -765,7 +856,6 @@ class PlateRecognizer:
                         vtw = len(vlabel) * font_size * 0.5
                         vth = font_size + 4
                     vpad = 6
-                    # Background label (nằm phía trên bên trái khung xe)
                     vlx1 = vx1
                     vly1 = max(0, vy1 - vth - vpad * 2)
                     vlx2 = vx1 + vtw + vpad * 2
@@ -776,7 +866,6 @@ class PlateRecognizer:
                     else:
                         draw.text((vlx1 + vpad, vly1 + vpad), vlabel, fill=(255, 255, 255))
 
-                    # ── Vẽ khung BIỂN SỐ (xanh lá / vàng) ──
                     for i in range(4):
                         draw.rectangle([x1 + i, y1 + i, x2 - i, y2 - i], outline=plate_color_rgb)
 
@@ -788,7 +877,6 @@ class PlateRecognizer:
                     except Exception:
                         tw = len(label) * font_size * 0.6
                         th = font_size + 4
-
                     pad = 8
                     draw.rectangle([x1, max(0, y1 - th - pad * 2), x1 + tw + pad * 2, y1], fill=plate_color_rgb)
                     if font:
@@ -861,7 +949,6 @@ class PlateRecognizer:
 
     @classmethod
     def _apply_position_aware_correction(cls, province_raw: str, serial_raw: str, number_raw: str) -> str:
-        # Sửa mã tỉnh
         province_fixed = []
         for ch in province_raw:
             if ch.isdigit():
@@ -874,7 +961,6 @@ class PlateRecognizer:
         if not province.isdigit() or len(province) != 2:
             return ""
 
-        # Sửa serial
         serial_fixed = []
         for ch in serial_raw:
             if ch.isalpha():
@@ -887,7 +973,6 @@ class PlateRecognizer:
         if not all(c in cls.VALID_LETTERS for c in serial):
             return ""
 
-        # Sửa số thứ tự
         number_fixed = []
         for ch in number_raw:
             if ch.isdigit():

@@ -12,7 +12,6 @@
   --text:#EAEAEA;--muted:#8B8FA8;--purple:#9B59B6;--orange:#E67E22;
   --zone-a-bg:#1A2E1A;--zone-a-border:#2ECC7166;
   --zone-b-bg:#1A1A2E;--zone-b-border:#4F8EF766;
-  --zone-c-bg:#2E1A1A;--zone-c-border:#E74C3C66;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
@@ -33,7 +32,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .main{padding:14px;overflow-y:auto;flex:1}
 .content{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .metric{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
 .metric-label{font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
 .metric-val{font-size:24px;font-weight:700;color:var(--text);line-height:1}
@@ -110,13 +109,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
       <div class="metric"><div class="metric-label"><i class="fa fa-parking"></i> Tổng ô đỗ</div><div class="metric-val" id="m-total">—</div><div class="metric-sub">tại bãi</div></div>
       <div class="metric"><div class="metric-label"><i class="fa fa-square-check"></i> Còn trống</div><div class="metric-val" id="m-avail">—</div><div class="metric-sub" id="m-avail-detail">ô</div></div>
       <div class="metric"><div class="metric-label"><i class="fa fa-car"></i> Đang đỗ</div><div class="metric-val" id="m-occ">—</div><div class="metric-sub" id="m-occ-pct">— % lấp đầy</div></div>
-      <div class="metric"><div class="metric-label"><i class="fa fa-money-bill-wave"></i> Doanh thu hôm nay</div><div class="metric-val" id="m-rev">—</div><div class="metric-sub" id="m-txn">— giao dịch</div></div>
     </div>
 
     <!-- Zone availability bars -->
     <div class="card">
       <div class="card-title"><i class="fa fa-layer-group"></i> Số lượng chỗ đỗ còn trống theo khu</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px" id="zone-avail-cards">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px" id="zone-avail-cards">
         <div class="metric" style="text-align:center;padding:16px">
           <div style="font-size:32px;font-weight:700;color:#27AE60" id="za-avail">—</div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px">Zone A<br><span style="font-size:10px">🚗 Ô tô</span></div>
@@ -124,10 +122,6 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
         <div class="metric" style="text-align:center;padding:16px">
           <div style="font-size:32px;font-weight:700;color:#4F8EF7" id="zb-avail">—</div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px">Zone B<br><span style="font-size:10px">🏍 Xe máy</span></div>
-        </div>
-        <div class="metric" style="text-align:center;padding:16px">
-          <div style="font-size:32px;font-weight:700;color:#E74C3C" id="zc-avail">—</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px">Zone C<br><span style="font-size:10px">🚛 Xe 7-16 chỗ</span></div>
         </div>
       </div>
     </div>
@@ -227,13 +221,10 @@ async function refreshStatus(){
   setEl('m-occ',s.occupied);
   setEl('m-occ-pct',s.occupancy_pct+'% lấp đầy');
   setEl('m-avail',s.available);
-  setEl('m-rev',fmtMoney(s.revenue_today));
-  setEl('m-txn',s.txn_count+' giao dịch');
   const z=s.zones;
   if(z){
     setEl('za-avail',z.A?.available??'—');
     setEl('zb-avail',z.B?.available??'—');
-    setEl('zc-avail',z.C?.available??'—');
   }
 }
 
@@ -245,7 +236,7 @@ async function loadMyVehicles(){
     <div class="vehicle-icon">${v.vehicle_type==='motorbike'?'🏍':'🚗'}</div>
     <div class="vehicle-info">
       <div class="vehicle-plate">${v.plate}</div>
-      <div class="vehicle-meta">${v.vehicle_type||'car_under_7'} · ${v.owner_name||'—'}</div>
+      <div class="vehicle-meta">${v.vehicle_type||'car'} · ${v.owner_name||'—'}</div>
     </div>
   </div>`:'<div style="color:var(--muted);font-size:13px;padding:8px 0">Chưa có thông tin xe</div>';
 }

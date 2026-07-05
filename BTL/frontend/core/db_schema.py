@@ -18,11 +18,12 @@ from typing import Optional
 SCHEMA_SQL = """
 -- ═════════════════════════════════════════════════════════════════
 -- TABLE: Vehicles (Thông tin phương tiện)
+-- Chỉ còn 2 loại: Ô tô và Xe máy
 -- ═════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS Vehicles (
     LicensePlate VARCHAR(20) PRIMARY KEY COMMENT 'Biển số xe (VN format)',
-    VehicleType ENUM('motorbike', 'electric_bike', 'car_under_7', 'car_7_16') 
-        NOT NULL DEFAULT 'motorbike' COMMENT 'Loại phương tiện',
+    VehicleType ENUM('motorbike', 'car') 
+        NOT NULL DEFAULT 'car' COMMENT 'Loại phương tiện (chỉ 2 loại)',
     OwnerName VARCHAR(100) COMMENT 'Tên chủ xe',
     OwnerPhone VARCHAR(15) COMMENT 'Số điện thoại',
     OwnerEmail VARCHAR(100) COMMENT 'Email chủ xe',
@@ -43,7 +44,7 @@ CREATE TABLE IF NOT EXISTS Vehicles (
 -- ═════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS Slots (
     SlotID VARCHAR(10) PRIMARY KEY COMMENT 'ID chỗ đỗ (A1, A2, B1, ...)',
-    Zone ENUM('A', 'B', 'C') NOT NULL COMMENT 'Zone A=Car<7, B=Motorbike, C=Truck',
+    Zone ENUM('A', 'B') NOT NULL COMMENT 'Zone A=Ô tô, Zone B=Xe máy',
     Status ENUM('empty', 'occupied', 'reserved', 'disabled') 
         NOT NULL DEFAULT 'empty' COMMENT 'Trạng thái',
     CurrentPlate VARCHAR(20) COMMENT 'Biển số xe đang đỗ',
@@ -61,8 +62,8 @@ CREATE TABLE IF NOT EXISTS Slots (
 -- ═════════════════════════════════════════════════════════════════
 CREATE TABLE IF NOT EXISTS Pricing (
     PricingID INT AUTO_INCREMENT PRIMARY KEY,
-    VehicleType ENUM('motorbike', 'electric_bike', 'car_under_7', 'car_7_16') 
-        NOT NULL,
+    VehicleType ENUM('motorbike', 'car') 
+        NOT NULL COMMENT 'motorbike=Xe máy, car=Ô tô',
     PricingType ENUM('combo', 'non_combo') NOT NULL,
     HourlyRate INT COMMENT 'Giá theo lượt (VNĐ)',
     MonthlyRate INT COMMENT 'Giá theo tháng (VNĐ)',
@@ -83,8 +84,8 @@ CREATE TABLE IF NOT EXISTS Pricing (
 CREATE TABLE IF NOT EXISTS Transactions (
     TransactionID VARCHAR(36) PRIMARY KEY COMMENT 'UUID',
     LicensePlate VARCHAR(20) NOT NULL,
-    VehicleType ENUM('motorbike', 'electric_bike', 'car_under_7', 'car_7_16') 
-        NOT NULL,
+    VehicleType ENUM('motorbike', 'car') 
+        NOT NULL COMMENT 'motorbike=Xe máy, car=Ô tô',
     SlotID VARCHAR(10) COMMENT 'Chỗ đỗ được phân bổ',
     PricingID INT COMMENT 'Bảng giá áp dụng',
     PricingType ENUM('combo', 'non_combo') NOT NULL,
@@ -124,7 +125,7 @@ CREATE TABLE IF NOT EXISTS OCRHistory (
     Confidence FLOAT NOT NULL COMMENT '0.0-1.0',
     RawText VARCHAR(255) COMMENT 'Text thô trước khi chuẩn hóa',
     IsValid BOOLEAN NOT NULL DEFAULT FALSE,
-    VehicleType ENUM('motorbike', 'electric_bike', 'car_under_7', 'car_7_16'),
+    VehicleType ENUM('motorbike', 'car'),
     Status ENUM('success', 'partial_fail', 'manual_input_required') 
         NOT NULL DEFAULT 'success',
     BboxData VARCHAR(255) COMMENT 'Bounding box coordinates (x1,y1,x2,y2)',
@@ -329,25 +330,18 @@ DEFAULT_PRICING = [
     # Motorbike
     {'vehicle_type': 'motorbike', 'pricing_type': 'non_combo', 'hourly': 5000, 'monthly': None},
     {'vehicle_type': 'motorbike', 'pricing_type': 'combo', 'hourly': None, 'monthly': 150000},
-    # Electric Bike
-    {'vehicle_type': 'electric_bike', 'pricing_type': 'non_combo', 'hourly': 8000, 'monthly': None},
-    {'vehicle_type': 'electric_bike', 'pricing_type': 'combo', 'hourly': None, 'monthly': 220000},
-    # Car < 7 seats
-    {'vehicle_type': 'car_under_7', 'pricing_type': 'non_combo', 'hourly': 30000, 'monthly': None},
-    {'vehicle_type': 'car_under_7', 'pricing_type': 'combo', 'hourly': None, 'monthly': 900000},
-    # Car 7-16 seats
-    {'vehicle_type': 'car_7_16', 'pricing_type': 'non_combo', 'hourly': 40000, 'monthly': None},
-    {'vehicle_type': 'car_7_16', 'pricing_type': 'combo', 'hourly': None, 'monthly': 1200000},
+    # Car (only 2 types: car and motorbike)
+    {'vehicle_type': 'car', 'pricing_type': 'non_combo', 'hourly': 15000, 'monthly': None},
+    {'vehicle_type': 'car', 'pricing_type': 'combo', 'hourly': None, 'monthly': 900000},
 ]
 
 # ─────────────────────────────────────────────────────────────────
-# SLOT CONFIGURATION
+# SLOT CONFIGURATION — chỉ 2 zone: A (Ô tô) và B (Xe máy)
 # ─────────────────────────────────────────────────────────────────
 
 DEFAULT_SLOTS = {
-    'A': 20,  # Zone A: 20 chỗ (Ô tô dưới 7 chỗ)
+    'A': 20,  # Zone A: 20 chỗ (Ô tô)
     'B': 40,  # Zone B: 40 chỗ (Xe máy)
-    'C': 10,  # Zone C: 10 chỗ (Ô tô 7-16 chỗ)
 }
 
 

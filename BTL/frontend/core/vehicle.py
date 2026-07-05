@@ -1,13 +1,12 @@
 """
 vehicle.py — Vehicle data model
 PCS Smart Parking System
+Chỉ còn 2 loại xe: Ô tô và Xe máy
 """
 
 import sys as _sys, os as _os
 _ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 if _ROOT not in _sys.path: _sys.path.insert(0, _ROOT)
-
-
 
 
 from dataclasses import dataclass, field
@@ -17,11 +16,9 @@ from typing import Optional
 
 
 class VehicleType(Enum):
+    """Chỉ còn 2 loại xe: Ô tô và Xe máy"""
     MOTORBIKE = "motorbike"
-    LARGE_MOTORBIKE = "large_motorbike"
-    ELECTRIC = "electric"
-    CAR_UNDER_7 = "car_under_7"
-    CAR_7_TO_16 = "car_7_to_16"
+    CAR = "car"
 
     def detectVehicle(self) -> str:
         return self.value
@@ -30,7 +27,22 @@ class VehicleType(Enum):
         return self.value
 
     def validateVehicle(self) -> bool:
-        return self in {VehicleType.MOTORBIKE, VehicleType.LARGE_MOTORBIKE, VehicleType.ELECTRIC, VehicleType.CAR_UNDER_7, VehicleType.CAR_7_TO_16} and self != VehicleType.MOTORBIKE
+        return self in {VehicleType.MOTORBIKE, VehicleType.CAR}
+
+    @classmethod
+    def from_yolo_class(cls, class_name: str) -> "VehicleType":
+        """Map YOLO class name -> VehicleType"""
+        if not class_name:
+            return cls.CAR
+        name_lower = class_name.lower()
+        if any(kw in name_lower for kw in ('motorbike', 'motorcycle', 'xemay', 'xe_may', 'bike', 'xe máy')):
+            return cls.MOTORBIKE
+        # Default: anything else is a car
+        return cls.CAR
+
+    @property
+    def display_name(self) -> str:
+        return {"motorbike": "🏍️ Xe máy", "car": "🚗 Ô tô"}.get(self.value, "🚗 Ô tô")
 
 
 @dataclass
@@ -43,7 +55,7 @@ class Vehicle:
     exit_time: Optional[datetime] = None
     slot_id: Optional[str] = None
     image_path: Optional[str] = None          # ảnh từ camera lúc vào
-    ocr_confidence: float = 0.0               # độ tin cậy YOLOv8
+    ocr_confidence: float = 0.0               # độ tin cậy OCR
 
     @property
     def is_parked(self) -> bool:

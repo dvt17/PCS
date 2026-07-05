@@ -1,6 +1,7 @@
 """
 database.py — Lưu trữ dữ liệu (SQLite mặc định, có thể chuyển sang MySQL)
 PCS Smart Parking System
+Chỉ còn 2 loại xe: Ô tô và Xe máy
 """
 
 import hashlib
@@ -117,11 +118,12 @@ def seed_initial_data() -> None:
             create_user(uuid.uuid4().hex[:8].upper(), 'staff1', hashlib.sha256('staff123'.encode()).hexdigest(), 'staff', 'Nhân viên 1')
             create_user(uuid.uuid4().hex[:8].upper(), 'owner', hashlib.sha256('owner123'.encode()).hexdigest(), 'owner', 'Chủ xe Nguyễn Văn A')
         if _row_count(con, 'vehicles') == 0:
-            _execute(con, insert_vehicle_sql, ('51A-12345', 'car_under_7', 'Nguyễn Văn A', '0901234567', 'active', ''))
+            _execute(con, insert_vehicle_sql, ('51A-12345', 'car', 'Nguyễn Văn A', '0901234567', 'active', ''))
             _execute(con, insert_vehicle_sql, ('59B-67890', 'motorbike', 'Trần Thị B', '0912345678', 'inactive', ''))
-            _execute(con, insert_vehicle_sql, ('51L-77777', 'car_under_7', 'Chủ xe Nguyễn Văn A', '0988777666', 'inactive', ''))
+            _execute(con, insert_vehicle_sql, ('51L-77777', 'car', 'Chủ xe Nguyễn Văn A', '0988777666', 'inactive', ''))
+            _execute(con, insert_vehicle_sql, ('92G-44444', 'motorbike', 'Lê Văn C', '0977123456', 'inactive', ''))
         if _row_count(con, 'image_history') == 0:
-            _execute(con, insert_history_sql, ('51A-12345', 'sample-51A-12345.jpg', 'car_under_7', 0.95, 1))
+            _execute(con, insert_history_sql, ('51A-12345', 'sample-51A-12345.jpg', 'car', 0.95, 1))
             _execute(con, insert_history_sql, ('59B-67890', 'sample-59B-67890.jpg', 'motorbike', 0.88, 1))
         con.commit()
 
@@ -329,6 +331,7 @@ def upsert_vehicle(
             """,
             (plate, vehicle_type, owner_name, owner_phone, combo_status, combo_expire_date),
         )
+    con.commit()
     con.close()
 
 
@@ -384,6 +387,7 @@ def save_transaction(txn_dict: dict) -> None:
             """,
             txn_dict,
         )
+    con.commit()
     con.close()
 
 
@@ -568,12 +572,11 @@ def get_user_by_username(username: str) -> Optional[dict]:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# IMAGE STORAGE — Lưu ảnh trong DB thay vì filesystem
+# IMAGE STORAGE — Lưu ảnh trong DB
 # ═══════════════════════════════════════════════════════════════════
 
 def save_image_to_db(filename: str, image_data: bytes, plate: str = "",
                      is_annotated: int = 0, original_filename: str = "") -> None:
-    """Lưu ảnh vào database (BLOB) thay vì ghi ra filesystem."""
     con = _connect()
     backend = get_db_backend()
     placeholder = "%s" if backend == "mysql" else "?"
@@ -588,7 +591,6 @@ def save_image_to_db(filename: str, image_data: bytes, plate: str = "",
 
 
 def get_image_from_db(filename: str) -> Optional[bytes]:
-    """Lấy ảnh từ database theo filename. Trả về None nếu không tìm thấy."""
     con = _connect()
     backend = get_db_backend()
     placeholder = "%s" if backend == "mysql" else "?"
@@ -601,7 +603,6 @@ def get_image_from_db(filename: str) -> Optional[bytes]:
 
 
 def image_exists_in_db(filename: str) -> bool:
-    """Kiểm tra ảnh đã tồn tại trong database chưa."""
     con = _connect()
     backend = get_db_backend()
     placeholder = "%s" if backend == "mysql" else "?"
@@ -612,7 +613,6 @@ def image_exists_in_db(filename: str) -> bool:
 
 
 def delete_image_from_db(filename: str) -> None:
-    """Xoá ảnh khỏi database."""
     con = _connect()
     backend = get_db_backend()
     placeholder = "%s" if backend == "mysql" else "?"
